@@ -6,11 +6,11 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v1
     - name: prepare
-      run: apt-get install cmake && mkdir -p build/ & cd build/
+      run: mkdir -p build/ & cd build/
     - name: cmake
       run: cmake ../src
     - name: make
