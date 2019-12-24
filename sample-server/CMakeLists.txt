@@ -14,4 +14,4 @@ add_executable(${PROJECT_NAME} ${SRCS})
 
 target_link_libraries(${PROJECT_NAME} solusek)
 
-include_directories(${PROJECT_NAME} "../solusek/include/")
+include_directories(${PROJECT_NAME} "../src/include/")
