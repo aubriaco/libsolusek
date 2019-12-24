@@ -9,9 +9,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: prepare
-      run: mkdir -p build/ & cd build/
     - name: cmake
-      run: cmake ../src
+      run: cmake src/
     - name: make
       run: make
