@@ -1,0 +1,9 @@
+build-debug/
+.codelite/
+edtapi.workspace
+edtapid/edtapid.project
+sample-server/sample-server.project
+.directory
+cmake-build-Debug/
+build-sample-server/
+build/
