@@ -117,7 +117,11 @@ int CNetHandlerSocket::_sni_callback(SSL *ssl, int *i, void* param)
     if(name == (*it).Host)
     {
       printf("SNI Found Cert for %s\n", name.c_str());
+#ifdef LIBSSL1_1
       SSL_CTX *ctx = SSL_CTX_new(TLS_method());
+#else
+      SSL_CTX *ctx =  SSL_CTX_new(TLSv1_2_method());
+#endif
       SSL_CTX_use_certificate(ctx, (X509*)(*it).Cert);
       for(std::vector<void*>::iterator ait = (*it).Aux.begin(); ait != (*it).Aux.end(); ++ait)
       {
