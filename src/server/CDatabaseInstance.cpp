@@ -12,6 +12,9 @@ namespace solusek
 {
 	CDatabaseInstance::CDatabaseInstance(void *d,const std::string &connectionString)
 	{
+		Used = true;
+		T = time(0);
+		ConnectionString = connectionString;
 		D = d;
 		H.setConnectionString(connectionString);
 		Connected = H.open();
@@ -24,9 +27,7 @@ namespace solusek
 
 	void CDatabaseInstance::dispose()
 	{
-		CDatabase *db = (CDatabase*)D;
-		db->removeInstance(this);
-		delete this;
+		Used = false;
 	}
 
 	ITransaction *CDatabaseInstance::begin()

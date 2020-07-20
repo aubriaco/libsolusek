@@ -18,9 +18,17 @@ namespace solusek
 		CDatabaseHandler H;
 		bool Connected;
 		void *D;
+		bool Used;
+		std::string ConnectionString;
+		time_t T;
 	public:
 		CDatabaseInstance(void *d, const std::string &connectionString);
 		~CDatabaseInstance();
+
+		bool inUse() { return Used; }
+		void putInUse() { Used = true; T = time(0); }
+		std::string getConnectionString() { return ConnectionString; }
+		time_t getT() { return T; }
 
 		virtual bool isConnected() { return Connected; }
 
