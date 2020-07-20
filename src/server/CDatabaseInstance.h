@@ -15,6 +15,8 @@ namespace solusek
 	class CDatabaseInstance : public IDatabaseInstance
 	{
 	private:
+		static size_t Counter;
+		size_t ID;
 		CDatabaseHandler H;
 		bool Connected;
 		void *D;
@@ -25,6 +27,7 @@ namespace solusek
 		CDatabaseInstance(void *d, const std::string &connectionString);
 		~CDatabaseInstance();
 
+		size_t getID() { return ID; }
 		bool inUse() { return Used; }
 		void putInUse() { Used = true; T = time(0); }
 		std::string getConnectionString() { return ConnectionString; }

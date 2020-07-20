@@ -14,4 +14,8 @@ add_executable(${PROJECT_NAME} ${SRCS})
 
 target_link_libraries(${PROJECT_NAME} solusek)
 
+if(USE_MYSQL)
+    target_link_libraries(${PROJECT_NAME} mysqlclient)
+endif()
+
 include_directories(${PROJECT_NAME} "../src/include/")

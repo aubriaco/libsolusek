@@ -75,6 +75,16 @@ int main(int argc, char **argv)
 
 	g_Server->setInterruptCallback(interruptCallback);
 
+#ifdef USE_MYSQL
+	g_Server->getDatabase()->setConnectionString("mysql://root@localhost");
+	solusek::IDatabaseInstance *db = g_Server->getDatabase()->open();
+	if(db->isConnected())
+		fprintf(stdout, "Connected to database!\n");
+	else
+		fprintf(stderr, "Could not connect to DB.\n");
+	db->dispose();
+#endif
+
 	g_Server->setListenPort(8080);
 
 	g_Server->addStaticDirectory("../static/solusek/", "solusek.com");

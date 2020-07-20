@@ -51,6 +51,7 @@ namespace solusek
 				if(!((CDatabaseInstance*)(*it))->inUse() && time(0) - ((CDatabaseInstance*)(*it))->getT() > ExpireSeconds)
 				{
 					Instances.erase(it);
+					fprintf(stdout, "DB Pool: Expired: %lu\n", ((CDatabaseInstance*)(*it))->getID());
 					delete (*it);
 					break;
 				}
@@ -80,6 +81,7 @@ namespace solusek
 		Hold = false;
 		if(!di)
 			di = new CDatabaseInstance(this, ConnectionString);
+		Instances.push_back(di);
 		return di;
 	}
 
