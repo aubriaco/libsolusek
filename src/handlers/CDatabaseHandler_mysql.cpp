@@ -39,6 +39,7 @@ CDatabaseHandler::CDatabaseHandler()
 
 CDatabaseHandler::~CDatabaseHandler()
 {
+	close();
 }
 
 bool CDatabaseHandler::open()
@@ -85,7 +86,9 @@ bool CDatabaseHandler::open()
 
 void CDatabaseHandler::close()
 {
-	mysql_close(C);
+	if(C)
+		mysql_close(C);
+	C = 0;
 }
 
 CDatabaseTransaction *CDatabaseHandler::begin()

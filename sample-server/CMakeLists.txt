@@ -15,6 +15,7 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} solusek)
 
 if(USE_MYSQL)
+    add_definitions(-DDUSE_MYSQL)
     target_link_libraries(${PROJECT_NAME} mysqlclient)
 endif()
 
