@@ -25,7 +25,7 @@ namespace solusek
 	std::string getFileModTime(const std::string& path)
 	{
 		struct stat attr;
-    stat(path.c_str(), &attr);
+    	stat(path.c_str(), &attr);
 		return ctime(&attr.st_mtime);
 	}
 
@@ -55,6 +55,8 @@ namespace solusek
 			delete (*it);
 		for(std::vector<MStaticEndpoint*>::iterator it = StaticEndpoints.begin(); it != StaticEndpoints.end(); ++it)
 			delete (*it);
+		if(Database)
+			delete Database;
 #ifdef USE_OPENSSL
 		//FIPS_mode_set(0);
 		EVP_cleanup();

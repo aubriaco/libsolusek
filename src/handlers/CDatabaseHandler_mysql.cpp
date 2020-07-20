@@ -76,7 +76,7 @@ bool CDatabaseHandler::open()
 	if(!C)
 		return false;
 
-  	if(!mysql_real_connect(C, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
+  	if(!mysql_real_connect(0, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
 		return false;
 
 	if(mysql_select_db(C, dbname.c_str()) != 0)

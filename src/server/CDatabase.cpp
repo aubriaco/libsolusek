@@ -20,7 +20,7 @@ namespace solusek
 		Hold = false;
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
-		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 		pthread_create(&TID, &attr, poolThread, this);
 		pthread_attr_destroy(&attr);
 	}
@@ -29,12 +29,14 @@ namespace solusek
 	{
 		closeAll();
 		Running = false;
+		pthread_join(TID, 0);
 	}
 
 	void *CDatabase::poolThread(void *param)
 	{
 		CDatabase *db = (CDatabase*)param;
 		db->_poolThread();
+		return 0;
 	}
 
 	void CDatabase::_poolThread()
@@ -42,8 +44,10 @@ namespace solusek
 		time_t t;
 		while(Running)
 		{
-			while(Hold)
+			while(Running && Hold)
 				usleep(1);
+			if(!Running)
+				break;
 			Hold = true;
 			t = time(0);
 			for(std::vector<IDatabaseInstance*>::iterator it = Instances.begin(); it != Instances.end(); ++it)
