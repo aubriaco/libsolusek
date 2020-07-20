@@ -31,10 +31,10 @@ add_library(${PROJECT_NAME} SHARED ${SRCS})
 
 target_link_libraries(${PROJECT_NAME} ssl crypto)
 
-if(MYSQL)
+if(USE_MYSQL)
   target_link_libraries(${PROJECT_NAME} mysqlclient)
 endif()
-if(PQXX)
+if(USE_PQXX)
   target_link_libraries(${PROJECT_NAME} pqxx)
 endif()
 
