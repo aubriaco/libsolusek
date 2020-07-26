@@ -46,7 +46,6 @@ namespace solusek
 	{
 		if(Config)
 			delete Config;
-		delete Database;
 		for(std::vector<CNode*>::iterator it = Nodes.begin(); it != Nodes.end(); ++it)
 			delete (*it);
 		for(std::vector<MEndpoint*>::iterator it = Endpoints.begin(); it != Endpoints.end(); ++it)
