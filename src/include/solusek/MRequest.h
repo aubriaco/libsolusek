@@ -18,7 +18,7 @@ namespace solusek
 		MRequest(const std::string &body) : Body(body) {}
 		std::vector<MCookie> Cookies;
 		unsigned int Length;
-		std::string Body, Host, SID;
+		std::string Body, Host, SID, QueryString;
 		std::string SSLClientCN;
 
 		MCookie getCookie(const std::string& name)

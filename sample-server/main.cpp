@@ -71,31 +71,37 @@ solusek::MResponse getSessionEndpoint(const void *sobj, solusek::MRequest& data)
 
 int main(int argc, char **argv)
 {
-     g_Server = solusek::createServer();
+	g_Server = solusek::createServer();
 
-     g_Server->setInterruptCallback(interruptCallback);
+	g_Server->setInterruptCallback(interruptCallback);
 
-     g_Server->setListenPort(8080);
+#ifdef USE_MYSQL
+	g_Server->getDatabase()->setConnectionString("mysql://root@localhost");
+	solusek::IDatabaseInstance *db = g_Server->getDatabase()->open();
+	if(db->isConnected())
+		fprintf(stdout, "Connected to database!\n");
+	else
+		fprintf(stderr, "Could not connect to DB.\n");
+	db->dispose();
+#endif
 
-     //g_Server->setCertificate("../certs/client1.pem", "../certs/client1.key","");
+	g_Server->setListenPort(8080);
 
-     //g_Server->setSecure(true);
+	g_Server->addStaticDirectory("../static/solusek/", "solusek.com");
+	g_Server->addStaticDirectory("../static/");
 
-		 g_Server->addStaticDirectory("../static/solusek/", "solusek.com");
-     g_Server->addStaticDirectory("../static/");
+	g_Server->registerStaticIndex("index.html");
 
-     g_Server->registerStaticIndex("index.html");
+	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cookie/set", setCookieEndpoint, "GET"));
+	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cookie/get", getCookieEndpoint, "GET"));
+	g_Server->registerEndpoint(new solusek::MEndpoint("/api/session/set", setSessionEndpoint, "GET"));
+	g_Server->registerEndpoint(new solusek::MEndpoint("/api/session/get", getSessionEndpoint, "GET"));
 
-		 g_Server->registerEndpoint(new solusek::MEndpoint("/api/cookie/set", setCookieEndpoint, "GET"));
-		 g_Server->registerEndpoint(new solusek::MEndpoint("/api/cookie/get", getCookieEndpoint, "GET"));
-		 g_Server->registerEndpoint(new solusek::MEndpoint("/api/session/set", setSessionEndpoint, "GET"));
-		 g_Server->registerEndpoint(new solusek::MEndpoint("/api/session/get", getSessionEndpoint, "GET"));
+	g_Server->setThreadLimit(50);
 
-		 g_Server->setThreadLimit(50);
+	g_Server->run();
 
-     g_Server->run();
+	g_Server->dispose();
 
-     g_Server->dispose();
-
-     return 0;
+	return 0;
 }

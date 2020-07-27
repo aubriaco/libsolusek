@@ -39,6 +39,7 @@ CDatabaseHandler::CDatabaseHandler()
 
 CDatabaseHandler::~CDatabaseHandler()
 {
+	close();
 }
 
 bool CDatabaseHandler::open()
@@ -48,14 +49,14 @@ bool CDatabaseHandler::open()
 	size_t n = ConnectionString.find("://");
 	if(n == std::string::npos)
 		return false;
-  std::string cs(ConnectionString.substr(n+3));
+  	std::string cs(ConnectionString.substr(n+3));
 	n = cs.find("/");
 	if(n == std::string::npos)
 		return false;
 	std::string p1(cs.substr(0, n));
 	std::string dbname(cs.substr(n+1));
 	std::string username, password, host;
-  n = p1.find("@");
+  	n = p1.find("@");
 	if(n != std::string::npos)
 	{
 		std::string p2(p1.substr(0, n));
@@ -76,7 +77,7 @@ bool CDatabaseHandler::open()
 	if(!C)
 		return false;
 
-  if(!mysql_real_connect(C, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
+  	if(!mysql_real_connect(0, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
 		return false;
 
 	if(mysql_select_db(C, dbname.c_str()) != 0)
@@ -85,7 +86,9 @@ bool CDatabaseHandler::open()
 
 void CDatabaseHandler::close()
 {
-	mysql_close(C);
+	if(C)
+		mysql_close(C);
+	C = 0;
 }
 
 CDatabaseTransaction *CDatabaseHandler::begin()

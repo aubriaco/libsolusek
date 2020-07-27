@@ -75,16 +75,15 @@ void CNetHandlerSocket::setupSSL(bool re)
 #ifdef LIBSSL1_1
 	CTX = SSL_CTX_new(TLS_method());
 #else
-  CTX = SSL_CTX_new(TLSv1_2_method());
+	CTX = SSL_CTX_new(TLSv1_2_method());
 #endif
-  SSL_CTX_set_session_id_context(CTX, (const unsigned char *)&ssl_session_ctx_id, sizeof(ssl_session_ctx_id));
-  ChildCTX = 0;
+  	SSL_CTX_set_session_id_context(CTX, (const unsigned char *)&ssl_session_ctx_id, sizeof(ssl_session_ctx_id));
+  	ChildCTX = 0;
 
 
 	//SSL_CTX_set_options(CTX, SSL_OP_SINGLE_DH_USE);
 	if (!CTX)
 	{
-
 		ERR_print_errors_fp(stderr);
 		return;
 	}
@@ -96,7 +95,7 @@ void CNetHandlerSocket::setupSSL(bool re)
 		setSSLCertificatePassword(CertificatePassword.c_str());
 		setSSLCertificate(CertificateFileName.c_str());
 		setSSLPrivateKeyFile(PrivateKeyFileName.c_str());
-    //setSNIEnabled(SNIEnabled);
+    	//setSNIEnabled(SNIEnabled);
 		//setSSLClientCAFile(ClientCAFileName.c_str());
 	}
 

@@ -30,8 +30,8 @@ CNetHandlerSocket::CNetHandlerSocket(int sid, bool ssl, bool sslMutual, SSL_CTX*
 	Timeout = 0;
 	_SSL = _ssl;
 	CTX = ctx;
-  ChildCTX = 0;
-  CTXRoot = ctx ? false : true;
+	ChildCTX = 0;
+	CTXRoot = ctx ? false : true;
 	SSLEnabled = ssl;
 	SSLMutual = sslMutual;
 	ThrowExceptions = false;
@@ -70,9 +70,9 @@ CNetHandlerSocket::CNetHandlerSocket(int sid, bool ssl, bool sslMutual, SSL_CTX*
 
 CNetHandlerSocket::~CNetHandlerSocket()
 {
-	close();
-  if(SSLEnabled)
-    cleanupSSL();
+  	close();
+  	if(SSLEnabled)
+    	cleanupSSL();
 }
 
 void CNetHandlerSocket::setTimeout(int timeout)

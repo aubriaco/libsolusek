@@ -24,7 +24,7 @@ namespace solusek
 		CNetHandlerSocket *Socket;
 		std::vector<CVarVal*> Headers;
 		CLog Log;
-		std::string Method, Path, ProtocolVersion, Body;
+		std::string Method, Path, QueryString, ProtocolVersion, Body;
 	public:
 		CNode(unsigned int id, void *server, CNetHandlerSocket *socket);
 		~CNode();
