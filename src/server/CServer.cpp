@@ -22,10 +22,10 @@ namespace solusek
 		unsigned int ID;
 	};
 
-	std::string getFileModTime(const std::string& path)
+	std::string getFileModTime(const std::string &path)
 	{
 		struct stat attr;
-    	stat(path.c_str(), &attr);
+		stat(path.c_str(), &attr);
 		return ctime(&attr.st_mtime);
 	}
 
@@ -44,17 +44,17 @@ namespace solusek
 
 	CServer::~CServer()
 	{
-		if(Config)
+		if (Config)
 			delete Config;
-		for(std::vector<CNode*>::iterator it = Nodes.begin(); it != Nodes.end(); ++it)
+		for (std::vector<CNode *>::iterator it = Nodes.begin(); it != Nodes.end(); ++it)
 			delete (*it);
-		for(std::vector<MEndpoint*>::iterator it = Endpoints.begin(); it != Endpoints.end(); ++it)
+		for (std::vector<MEndpoint *>::iterator it = Endpoints.begin(); it != Endpoints.end(); ++it)
 			delete (*it);
-		for(std::vector<CSession*>::iterator it = Sessions.begin(); it != Sessions.end(); ++it)
+		for (std::vector<CSession *>::iterator it = Sessions.begin(); it != Sessions.end(); ++it)
 			delete (*it);
-		for(std::vector<MStaticEndpoint*>::iterator it = StaticEndpoints.begin(); it != StaticEndpoints.end(); ++it)
+		for (std::vector<MStaticEndpoint *>::iterator it = StaticEndpoints.begin(); it != StaticEndpoints.end(); ++it)
 			delete (*it);
-		if(Database)
+		if (Database)
 			delete Database;
 #ifdef USE_OPENSSL
 		//FIPS_mode_set(0);
@@ -85,22 +85,20 @@ namespace solusek
 		delete this;
 	}
 
-
 	IDatabase *CServer::getDatabase()
 	{
 		return Database;
 	}
 
-
 	IFlagCollection *CServer::createFlagCollection()
 	{
-		return (IFlagCollection*)new CFlagCollection();
+		return (IFlagCollection *)new CFlagCollection();
 	}
 
 	bool CServer::loadConfig(const char *fileName)
 	{
 		Config = new CConfig(fileName);
-		if(!Config->isOK())
+		if (!Config->isOK())
 		{
 			delete Config;
 			Config = 0;
@@ -119,12 +117,12 @@ namespace solusek
 
 		MainSocket = NH.createSocket(Secure);
 
-		if(!MainSocket->isReady())
+		if (!MainSocket->isReady())
 		{
 			Log.print("Socket not ready.\n");
 		}
 
-		if(Secure)
+		if (Secure)
 		{
 			MainSocket->mutexSSL();
 			MainSocket->setSSLMutual(false);
@@ -135,16 +133,15 @@ namespace solusek
 
 		MainSocket->setTimeout(5);
 
-		if(MainSocket->bind(ListenPort))
+		if (MainSocket->bind(ListenPort))
 		{
 
 			Log.print("Listener initialized.\n");
 
-
-			while(!StopSignal)
+			while (!StopSignal)
 			{
 
-				while(ThreadCount > ThreadLimit)
+				while (ThreadCount > ThreadLimit)
 				{
 					sleep(1);
 					continue;
@@ -160,9 +157,7 @@ namespace solusek
 				sprintf(tlimit, "Thread Count %u of %u allowed.\n", ThreadCount, ThreadLimit);
 				Log.print(tlimit);
 
-
-
-				if(StopSignal)
+				if (StopSignal)
 				{
 					socket->close();
 					delete socket;
@@ -171,25 +166,22 @@ namespace solusek
 
 				Log.print("Client connection attempt.\n");
 
-
 				SServerPackage *pkg = new SServerPackage();
 				pkg->Server = this;
 				pkg->Socket = socket;
 				pkg->ID = 0;
 				THREADID threadId = 0;
 
-
-
-				TH.create(thread_runNode, (void*)pkg, &threadId, false);
+				TH.create(thread_runNode, (void *)pkg, &threadId, false);
 				pkg->ID = threadId;
 			}
 
 			MainSocket->close();
 			delete MainSocket;
 
-			if(Nodes.size() > 0)
+			if (Nodes.size() > 0)
 				Log.print("Waiting for nodes to gracefully terminate.\n");
-			while(Nodes.size() > 0)
+			while (Nodes.size() > 0)
 				sleep(1);
 
 			return E_ERROR_NONE;
@@ -204,8 +196,8 @@ namespace solusek
 
 	THREADFUNC CServer::thread_runNode(void *param)
 	{
-		SServerPackage *pkg = (SServerPackage*)param;
-		while(pkg->ID == 0)
+		SServerPackage *pkg = (SServerPackage *)param;
+		while (pkg->ID == 0)
 			sleep(1);
 		pkg->Server->runNode(pkg->ID, pkg->Socket);
 		delete pkg;
@@ -224,9 +216,9 @@ namespace solusek
 
 	void CServer::removeNode(CNode *node)
 	{
-		for(std::vector<CNode*>::iterator it = Nodes.begin(); it != Nodes.end(); ++it)
+		for (std::vector<CNode *>::iterator it = Nodes.begin(); it != Nodes.end(); ++it)
 		{
-			if((*it)->getID() == node->getID())
+			if ((*it)->getID() == node->getID())
 			{
 				Nodes.erase(it);
 				return;
@@ -246,149 +238,144 @@ namespace solusek
 		Endpoints.push_back(ep);
 	}
 
-  void CServer::registerStaticIndex(const char *name)
-  {
-      StaticIndexes.push_back(name);
-  }
+	void CServer::registerStaticIndex(const char *name)
+	{
+		StaticIndexes.push_back(name);
+	}
 
-  void CServer::addStaticDirectory(const char *path, const char *host)
-  {
+	void CServer::addStaticDirectory(const char *path, const char *host)
+	{
 		MStaticEndpoint *ep = new MStaticEndpoint();
-		if(host)
+		if (host)
 			ep->Host = strtolower(host);
 		ep->Path = path;
-	  StaticEndpoints.push_back(ep);
-  }
+		StaticEndpoints.push_back(ep);
+	}
 
 	MEndpoint *CServer::getEndpoint(const char *path, const char *method)
 	{
-		for(std::vector<MEndpoint*>::iterator it = Endpoints.begin(); it != Endpoints.end(); ++it)
+		for (std::vector<MEndpoint *>::iterator it = Endpoints.begin(); it != Endpoints.end(); ++it)
 		{
-			if((*it)->Path == path && (*it)->Method == method)
+			if ((*it)->Path == path && (*it)->Method == method)
 				return (*it);
 		}
 		return 0;
 	}
 
-    MEndpoint *CServer::getStaticEndpoint(const char *path, const char *method, const char *host)
-    {
-        std::string fpath(path);
-        if(fpath.find("..") != std::string::npos)
-            return 0;
-        if(fpath[fpath.size()-1] == '/')
-            return getStaticIndex(fpath.c_str(), method, host);
+	MEndpoint *CServer::getStaticEndpoint(const char *path, const char *method, const char *host)
+	{
+		std::string fpath(path);
+		if (fpath.find("..") != std::string::npos)
+			return 0;
+		if (fpath[fpath.size() - 1] == '/')
+			return getStaticIndex(fpath.c_str(), method, host);
 
-				std::string staticPath, shost;
+		std::string staticPath, shost;
 
-				if(host)
-					shost = strtolower(host);
+		if (host)
+			shost = strtolower(host);
 
-				for(std::vector<MStaticEndpoint*>::iterator it = StaticEndpoints.begin(); it != StaticEndpoints.end(); ++it)
+		for (std::vector<MStaticEndpoint *>::iterator it = StaticEndpoints.begin(); it != StaticEndpoints.end(); ++it)
+		{
+			if ((*it)->Host.size() == 0)
+			{
+				staticPath = (*it)->Path;
+				break;
+			}
+			else if ((*it)->Host.size() <= shost.size() && shost.substr(shost.size() - (*it)->Host.size()) == (*it)->Host)
+			{
+				staticPath = (*it)->Path;
+				break;
+			}
+		}
+
+		if (staticPath.size() == 0)
+			return 0;
+
+		MEndpoint *endpoint = 0;
+
+		std::string qs;
+		unsigned int np = fpath.find("?");
+		if (np != std::string::npos)
+		{
+			qs = fpath.substr(np + 1);
+			fpath = fpath.substr(0, np);
+		}
+
+		std::string dpath(staticPath);
+		dpath += "/";
+		dpath += fpath;
+
+		np = fpath.find_last_of("/");
+		if (np == std::string::npos)
+			return 0;
+
+		std::string fname(fpath.substr(np + 1));
+
+		std::string ext;
+		np = fname.find_last_of(".");
+
+		if (np != std::string::npos)
+		{
+			ext = strtolower(fname.substr(np + 1));
+
+			MMimeType *mime = getMimeType(ext);
+
+			if (mime)
+			{
+				if (mime->IsText)
 				{
-					if((*it)->Host.size() == 0)
-					{
-						staticPath = (*it)->Path;
-						break;
-					}
-					else if((*it)->Host.size() <= shost.size() && shost.substr(shost.size()-(*it)->Host.size()) == (*it)->Host)
-					{
-						staticPath = (*it)->Path;
-						break;
-					}
+					FILE *file = fopen(dpath.c_str(), "r");
+					if (!file)
+						return 0;
+					fclose(file);
+					endpoint = new MEndpoint();
+					endpoint->Date = getFileModTime(dpath);
+					endpoint->Path = dpath;
+					endpoint->Method = method;
+					endpoint->Ext = ext;
+					endpoint->Contents = readTextFile(dpath);
+					endpoint->Type = 1;
+					endpoint->ContentType = mime->Type;
 				}
-
-				if(staticPath.size() == 0)
-					return 0;
-
-				MEndpoint *endpoint = 0;
-
-
-				std::string qs;
-				unsigned int np = fpath.find("?");
-				if(np != std::string::npos)
+				else
 				{
-					qs = fpath.substr(np+1);
-					fpath = fpath.substr(0, np);
+					FILE *file = fopen(dpath.c_str(), "rb");
+					if (!file)
+						return 0;
+					fclose(file);
+					endpoint = new MEndpoint();
+					endpoint->Date = getFileModTime(dpath);
+					endpoint->Path = dpath;
+					endpoint->Method = method;
+					endpoint->Ext = ext;
+					std::vector<unsigned char> data = readBinaryFile(dpath);
+					endpoint->Contents = std::string((const char *)&data[0], data.size());
+					endpoint->Type = 1;
+					endpoint->ContentType = mime->Type;
 				}
+			}
+		}
+		return endpoint;
+	}
 
-        std::string dpath(staticPath);
-        dpath += "/";
-        dpath += fpath;
+	MEndpoint *CServer::getStaticIndex(const char *path, const char *method, const char *host)
+	{
+		std::string dpath(path);
+		for (std::vector<std::string>::iterator it = StaticIndexes.begin(); it != StaticIndexes.end(); ++it)
+		{
+			if ((*it)[(*it).size() - 1] == '/')
+				continue;
+			MEndpoint *endpoint = getStaticEndpoint((dpath + (*it)).c_str(), method, host);
+			if (endpoint != 0)
+			{
+				return endpoint;
+			}
+		}
+		return 0;
+	}
 
-
-
-        np = fpath.find_last_of("/");
-        if(np == std::string::npos)
-            return 0;
-
-        std::string fname(fpath.substr(np+1));
-
-
-
-        std::string ext;
-        np = fname.find_last_of(".");
-
-        if(np != std::string::npos)
-        {
-            ext = strtolower(fname.substr(np+1));
-
-						MMimeType *mime = getMimeType(ext);
-
-						if(mime)
-						{
-							if(mime->IsText)
-							{
-								FILE *file = fopen(dpath.c_str(), "r");
-                if(!file)
-                    return 0;
-                fclose(file);
-                endpoint = new MEndpoint();
-								endpoint->Date = getFileModTime(dpath);
-                endpoint->Path = dpath;
-                endpoint->Method = method;
-                endpoint->Ext = ext;
-                endpoint->Contents = readTextFile(dpath);
-                endpoint->Type = 1;
-                endpoint->ContentType = mime->Type;
-							}
-							else
-							{
-								FILE *file = fopen(dpath.c_str(), "rb");
-								if(!file)
-										return 0;
-								fclose(file);
-								endpoint = new MEndpoint();
-								endpoint->Date = getFileModTime(dpath);
-								endpoint->Path = dpath;
-								endpoint->Method = method;
-								endpoint->Ext = ext;
-							  std::vector<unsigned char> data = readBinaryFile(dpath);
-								endpoint->Contents = std::string((const char*)&data[0], data.size());
-								endpoint->Type = 1;
-								endpoint->ContentType = mime->Type;
-							}
-						}
-        }
-        return endpoint;
-    }
-
-    MEndpoint *CServer::getStaticIndex(const char *path, const char *method, const char *host)
-    {
-        std::string dpath(path);
-        for(std::vector<std::string>::iterator it = StaticIndexes.begin(); it != StaticIndexes.end(); ++it)
-        {
-            if((*it)[(*it).size()-1] == '/')
-                continue;
-            MEndpoint *endpoint = getStaticEndpoint((dpath + (*it)).c_str(), method, host);
-            if(endpoint != 0)
-            {
-                return endpoint;
-            }
-        }
-        return 0;
-    }
-
-	void CServer::setInterruptCallback(void(*callback)(int))
+	void CServer::setInterruptCallback(void (*callback)(int))
 	{
 		struct sigaction sigIntHandler;
 
@@ -397,7 +384,6 @@ namespace solusek
 		sigIntHandler.sa_flags = 0;
 
 		sigaction(SIGINT, &sigIntHandler, NULL);
-
 	}
 
 	void CServer::stop()
@@ -411,26 +397,26 @@ namespace solusek
 
 	ISession *CServer::startSession()
 	{
-		CSession* ses = new CSession();
+		CSession *ses = new CSession();
 		Sessions.push_back(ses);
 		return ses;
 	}
 
-	ISession *CServer::getSession(const std::string& id)
+	ISession *CServer::getSession(const std::string &id)
 	{
-		for(std::vector<CSession*>::iterator it = Sessions.begin(); it != Sessions.end(); ++it)
+		for (std::vector<CSession *>::iterator it = Sessions.begin(); it != Sessions.end(); ++it)
 		{
-			if((*it)->getID() == id)
+			if ((*it)->getID() == id)
 				return (*it);
 		}
 		return 0;
 	}
 
-	void CServer::destroySession(const std::string& id)
+	void CServer::destroySession(const std::string &id)
 	{
-		for(std::vector<CSession*>::iterator it = Sessions.begin(); it != Sessions.end(); ++it)
+		for (std::vector<CSession *>::iterator it = Sessions.begin(); it != Sessions.end(); ++it)
 		{
-			if((*it)->getID() == id)
+			if ((*it)->getID() == id)
 			{
 				Sessions.erase(it);
 				return;
@@ -438,30 +424,30 @@ namespace solusek
 		}
 	}
 
-	MMimeType* CServer::getMimeType(const std::string &ext)
+	MMimeType *CServer::getMimeType(const std::string &ext)
 	{
-		for(std::vector<MMimeType>::iterator it = MimeTypes.begin(); it != MimeTypes.end(); ++it)
+		for (std::vector<MMimeType>::iterator it = MimeTypes.begin(); it != MimeTypes.end(); ++it)
 		{
-			if((*it).Ext == ext)
+			if ((*it).Ext == ext)
 				return &(*it);
 		}
 		return 0;
 	}
 
-	void CServer::addMimeType(const MMimeType& type)
+	void CServer::addMimeType(const MMimeType &type)
 	{
 		MimeTypes.push_back(type);
 	}
 
-	void CServer::removeMimeType(const std::string& ext)
+	void CServer::removeMimeType(const std::string &ext)
 	{
-		for(std::vector<MMimeType>::iterator it = MimeTypes.begin(); it != MimeTypes.end(); ++it)
+		for (std::vector<MMimeType>::iterator it = MimeTypes.begin(); it != MimeTypes.end(); ++it)
 		{
-			if((*it).Ext == ext)
+			if ((*it).Ext == ext)
 			{
 				MimeTypes.erase(it);
 				return;
 			}
 		}
 	}
-}
+} // namespace solusek
