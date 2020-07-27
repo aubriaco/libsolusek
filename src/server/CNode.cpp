@@ -59,6 +59,7 @@ namespace solusek
 			if (ep = server->getEndpoint(Path.c_str(), Method.c_str()))
 			{
 				MRequest request(Body);
+				request.QueryString = QueryString;
 				if (CVarVal *vv = getHeader("X-SSL-Client-CN"))
 					request.SSLClientCN = vv->Val;
 
@@ -246,7 +247,7 @@ namespace solusek
 			if (buf[0] == '\n')
 			{
 				CVarVal *vv = new CVarVal();
-				int sp = acc.find(':');
+				size_t sp = acc.find(':');
 				if (sp != std::string::npos)
 				{
 					vv->Var = acc.substr(0, sp);
@@ -256,8 +257,6 @@ namespace solusek
 				}
 				else
 					vv->Var = acc;
-
-				//Log.print(vv->Val + "=" + vv->Var + std::string("\n"));
 
 				Headers.push_back(vv);
 				acc = "";
@@ -272,12 +271,23 @@ namespace solusek
 
 		if (Headers.size() > 0)
 		{
-			int sp = Headers[0]->Var.find(' ');
+			size_t sp = Headers[0]->Var.find(' ');
+			if(sp == std::string::npos)
+			{				
+				Log.print("Invalid header.");
+				throw std::exception();
+			}
 			Method = Headers[0]->Var.substr(0, sp);
 			std::string seg2 = Headers[0]->Var.substr(sp + 1);
 			sp = seg2.find(' ');
-			Path = seg2.substr(0, sp);
+			Path = seg2.substr(0, sp);			
 			ProtocolVersion = seg2.substr(sp + 1);
+			sp = Path.find('?');
+			if(sp != std::string::npos)
+			{
+				QueryString = Path.substr(sp+1);
+				Path = Path.substr(0, sp);
+			}
 		}
 	}
 
@@ -301,8 +311,6 @@ namespace solusek
 				buf[read] = 0;
 				Body += buf;
 			}
-
-			//Log.print(Body + std::string("\n"));
 		}
 	}
 
