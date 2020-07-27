@@ -61,6 +61,7 @@ namespace solusek
 		EVP_cleanup();
 		CRYPTO_cleanup_all_ex_data();
 		ERR_free_strings();
+		OPENSSL_cleanup();
 #endif
 	}
 
