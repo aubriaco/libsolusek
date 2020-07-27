@@ -27,7 +27,7 @@ namespace solusek
 	CNode::~CNode()
 	{
 		Log.print("Cleaning up node.\n");
-		for(std::vector<CVarVal*>::iterator it = Headers.begin(); it != Headers.end(); ++it)
+		for (std::vector<CVarVal *>::iterator it = Headers.begin(); it != Headers.end(); ++it)
 		{
 			delete (*it);
 		}
@@ -37,43 +37,43 @@ namespace solusek
 	void CNode::run()
 	{
 		time_t start = time(0);
-		CServer *server = (CServer*)Server;
+		CServer *server = (CServer *)Server;
 		try
 		{
 			readHeader();
 			readBody();
 		}
-		catch(int e)
+		catch (int e)
 		{
 			Path = "";
 			Log.print("Connection unexpectedly closed.\n");
 		}
 
-		if(Path.size() > 0)
+		if (Path.size() > 0)
 		{
 			std::string host;
-			if(CVarVal *vv = getHeader("Host"))
+			if (CVarVal *vv = getHeader("Host"))
 				host = vv->Val;
 
-      MEndpoint *ep;
-			if(ep = server->getEndpoint(Path.c_str(), Method.c_str()))
+			MEndpoint *ep;
+			if (ep = server->getEndpoint(Path.c_str(), Method.c_str()))
 			{
 				MRequest request(Body);
-				if(CVarVal *vv = getHeader("X-SSL-Client-CN"))
+				if (CVarVal *vv = getHeader("X-SSL-Client-CN"))
 					request.SSLClientCN = vv->Val;
 
-				if(CVarVal *vv = getHeader("Cookie"))
+				if (CVarVal *vv = getHeader("Cookie"))
 				{
 					std::string deccum(vv->Val);
 					unsigned int sp;
 					std::string ck;
-					while(deccum.size() > 0)
+					while (deccum.size() > 0)
 					{
 						sp = deccum.find(";");
-						if(sp != std::string::npos && sp < deccum.size())
+						if (sp != std::string::npos && sp < deccum.size())
 						{
 							ck = deccum.substr(0, sp);
-							deccum = std::string(&deccum[sp + 1], deccum.size()-sp-1);
+							deccum = std::string(&deccum[sp + 1], deccum.size() - sp - 1);
 						}
 						else
 						{
@@ -83,11 +83,11 @@ namespace solusek
 						trim(ck);
 
 						unsigned int np = ck.find("=");
-						if(np != std::string::npos)
+						if (np != std::string::npos)
 						{
-							std::string cname(ck.substr(0,np));
-							std::string cval(ck.substr(np+1));
-							if(cname == "SolusekSID")
+							std::string cname(ck.substr(0, np));
+							std::string cval(ck.substr(np + 1));
+							if (cname == "SolusekSID")
 								request.SID = cval;
 							request.Cookies.push_back(MCookie(cname, cval));
 						}
@@ -101,27 +101,27 @@ namespace solusek
 				{
 					writeResponse(response);
 				}
-				catch(int e)
+				catch (int e)
 				{
 					Log.print("Connection unexpectedly closed.\n");
 				}
 			}
-      else if((ep = server->getStaticEndpoint(Path.c_str(), Method.c_str(), host.c_str())) != 0)
-      {
-          MResponse response;
-          response.Body = ep->Contents;
-          response.Code = 200;
-          response.ContentType = ep->ContentType;
-          try
-          {
-              writeResponse(response);
-          }
-          catch(int e)
-          {
-              Log.print("Connection unexpectedly closed.\n");
-          }
-					delete ep;
-      }
+			else if ((ep = server->getStaticEndpoint(Path.c_str(), Method.c_str(), host.c_str())) != 0)
+			{
+				MResponse response;
+				response.Body = ep->Contents;
+				response.Code = 200;
+				response.ContentType = ep->ContentType;
+				try
+				{
+					writeResponse(response);
+				}
+				catch (int e)
+				{
+					Log.print("Connection unexpectedly closed.\n");
+				}
+				delete ep;
+			}
 			else
 			{
 				Log.print(std::string("Endpoint '") + Path + std::string("' not found.\n"));
@@ -130,7 +130,7 @@ namespace solusek
 				{
 					writeResponse(response);
 				}
-				catch(int e)
+				catch (int e)
 				{
 					Log.print("Connection unexpectedly closed.\n");
 				}
@@ -161,13 +161,13 @@ namespace solusek
 		std::string codeDesc = response.getCodeDescription();
 		std::string sdt;
 
-		if(response.Date.size() == 0)
+		if (response.Date.size() == 0)
 		{
 			time_t now = time(0);
 			tm *gmtm = gmtime(&now);
 			char *dt = asctime(gmtm);
 			sdt = dt;
-			sdt = sdt.substr(0, sdt.size()-1);
+			sdt = sdt.substr(0, sdt.size() - 1);
 		}
 		else
 			sdt = response.Date;
@@ -182,8 +182,8 @@ namespace solusek
 		writeString(sdt);
 		writeString("\r\n");
 		writeString("Content-Type: ");
-    writeString(response.ContentType);
-    writeString("\r\n");
+		writeString(response.ContentType);
+		writeString("\r\n");
 
 		char lenBuf[32];
 		snprintf(lenBuf, 32, "%u", (unsigned int)response.Body.size());
@@ -196,7 +196,7 @@ namespace solusek
 		writeString(sdt);
 		writeString("\r\n");
 
-		if(response.SID.size() > 0)
+		if (response.SID.size() > 0)
 		{
 			writeString("Set-Cookie: ");
 			writeString("SolusekSID");
@@ -207,20 +207,20 @@ namespace solusek
 			writeString("\r\n");
 		}
 
-    for(unsigned int n = 0; n < response.Cookies.size(); n++)
-    {
-        writeString("Set-Cookie: ");
-        writeString(response.Cookies[n].Name);
-        writeString("=");
-        writeString(response.Cookies[n].Value);
-        writeString("; SameSite=Strict");
-        if(response.Cookies[n].Path.size() > 0)
-        {
-            writeString("; Path=");
-            writeString(response.Cookies[n].Path);
-        }
-        writeString("\r\n");
-    }
+		for (unsigned int n = 0; n < response.Cookies.size(); n++)
+		{
+			writeString("Set-Cookie: ");
+			writeString(response.Cookies[n].Name);
+			writeString("=");
+			writeString(response.Cookies[n].Value);
+			writeString("; SameSite=Strict");
+			if (response.Cookies[n].Path.size() > 0)
+			{
+				writeString("; Path=");
+				writeString(response.Cookies[n].Path);
+			}
+			writeString("\r\n");
+		}
 
 		writeString("Server: Solusek/1.0 (Linux)\r\n");
 		writeString("Connection: close\r\n");
@@ -237,21 +237,21 @@ namespace solusek
 		std::string acc("");
 		int ex = 0;
 		char buf[2];
-		while(true)
+		while (true)
 		{
 			int r = Socket->readBuffer(buf, 1);
 			buf[1] = 0;
-			if(buf[0] == '\r' || buf[0] == 0)
+			if (buf[0] == '\r' || buf[0] == 0)
 				continue;
-			if(buf[0] == '\n')
+			if (buf[0] == '\n')
 			{
 				CVarVal *vv = new CVarVal();
 				int sp = acc.find(':');
-				if(sp != std::string::npos)
+				if (sp != std::string::npos)
 				{
 					vv->Var = acc.substr(0, sp);
 					std::transform(vv->Var.begin(), vv->Var.end(), vv->Var.begin(), ::tolower);
-					vv->Val = acc.substr(sp+1);
+					vv->Val = acc.substr(sp + 1);
 					trim(vv->Val);
 				}
 				else
@@ -262,7 +262,7 @@ namespace solusek
 				Headers.push_back(vv);
 				acc = "";
 				ex++;
-				if(ex == 2)
+				if (ex == 2)
 					break;
 				continue;
 			}
@@ -270,18 +270,15 @@ namespace solusek
 			ex = 0;
 		}
 
-
-		if(Headers.size() > 0)
+		if (Headers.size() > 0)
 		{
 			int sp = Headers[0]->Var.find(' ');
 			Method = Headers[0]->Var.substr(0, sp);
 			std::string seg2 = Headers[0]->Var.substr(sp + 1);
 			sp = seg2.find(' ');
 			Path = seg2.substr(0, sp);
-			ProtocolVersion = seg2.substr(sp+1);
+			ProtocolVersion = seg2.substr(sp + 1);
 		}
-
-
 	}
 
 	void CNode::readBody()
@@ -290,7 +287,7 @@ namespace solusek
 
 		CVarVal *vv = getHeader("content-length");
 
-		if(vv)
+		if (vv)
 		{
 			unsigned int len = atoi(vv->Val.c_str());
 
@@ -298,7 +295,7 @@ namespace solusek
 
 			int read = 0;
 			char buf[BATSD_DEFAULT_CHUNK_SIZE + 1];
-			for(unsigned int n = 0; n < len; n += read)
+			for (unsigned int n = 0; n < len; n += read)
 			{
 				read = Socket->readBuffer(buf, BATSD_DEFAULT_CHUNK_SIZE);
 				buf[read] = 0;
@@ -306,13 +303,12 @@ namespace solusek
 			}
 
 			//Log.print(Body + std::string("\n"));
-
 		}
 	}
 
 	void CNode::dispose()
 	{
-		CServer *server = (CServer*)Server;
+		CServer *server = (CServer *)Server;
 		server->removeNode(this);
 		delete this;
 	}
@@ -321,11 +317,11 @@ namespace solusek
 	{
 		std::string tmp = strtolower(name);
 		std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
-		for(std::vector<CVarVal*>::iterator it = Headers.begin(); it != Headers.end(); ++it)
+		for (std::vector<CVarVal *>::iterator it = Headers.begin(); it != Headers.end(); ++it)
 		{
-			if(strtolower((*it)->Var) == tmp)
+			if (strtolower((*it)->Var) == tmp)
 				return (*it);
 		}
 		return 0;
 	}
-}
+} // namespace solusek
