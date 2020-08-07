@@ -14,6 +14,7 @@
 #include "MRequest.h"
 #include "MResponse.h"
 #include "MErrorResponse.h"
+#include "ILog.h"
 
 namespace solusek
 {

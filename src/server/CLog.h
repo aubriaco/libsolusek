@@ -16,6 +16,8 @@ namespace solusek
 	{
 	private:
 		std::string Prefix;
+		static bool Enabled;
+
 	public:
 		CLog();
 		CLog(const std::string &prefix);
@@ -24,7 +26,7 @@ namespace solusek
 		virtual void open();
 		virtual void close();
 		virtual void print(const std::string &s);
-        static int log_printf(const char* fmt, ...)
+		static int log_printf(const char *fmt, ...)
 		{
 			va_list args;
 			va_start(args, fmt);
@@ -33,7 +35,8 @@ namespace solusek
 			fflush(stdout);
 			return rc;
 		}
+		virtual void setEnabled(bool enabled) { Enabled = enabled; }
 	};
-}
+} // namespace solusek
 
 #endif

@@ -8,6 +8,8 @@
 
 namespace solusek
 {
+	bool CLog::Enabled = false;
+
 	CLog::CLog()
 	{
 		// N/U
@@ -33,6 +35,7 @@ namespace solusek
 
 	void CLog::print(const std::string &s)
 	{
-		log_printf("%s", s.c_str());
+		if(Enabled)
+			log_printf("%s", s.c_str());
 	}
 }
