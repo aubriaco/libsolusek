@@ -20,7 +20,7 @@ class CThreadHandler
 {
 public:
 
-	THREADHANDLE create(THREADENTRY func, void* param, THREADID* threadId = 0, bool forker = false);
+	THREADHANDLE create(THREADENTRY func, void* param, THREADID* threadId = 0, bool forker = false, bool joinable = true);
 
 	void exitThread(void *r);
 

@@ -172,7 +172,7 @@ namespace solusek
 				pkg->ID = 0;
 				THREADID threadId = 0;
 
-				TH.create(thread_runNode, (void *)pkg, &threadId, false);
+				TH.create(thread_runNode, (void *)pkg, &threadId, false, true);
 				pkg->ID = threadId;
 			}
 
@@ -201,8 +201,9 @@ namespace solusek
 			sleep(1);
 		pkg->Server->runNode(pkg->ID, pkg->Socket);
 		delete pkg;
-		pthread_detach(pthread_self());
+		//pthread_detach(pthread_self());
 		pthread_exit(0);
+		return 0;
 	}
 
 	void CServer::runNode(int id, CNetHandlerSocket *socket)

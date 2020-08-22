@@ -15,7 +15,7 @@
 #	include <stdio.h>
 
 
-THREADHANDLE CThreadHandler::create(THREADENTRY func, void* param, THREADID* threadId, bool forker)
+THREADHANDLE CThreadHandler::create(THREADENTRY func, void* param, THREADID* threadId, bool forker, bool joinable)
 {
 	if(forker)
 	{
@@ -36,7 +36,17 @@ THREADHANDLE CThreadHandler::create(THREADENTRY func, void* param, THREADID* thr
 			return -1;
 	}
 	else
-		return pthread_create(threadId, 0, (THREADENTRY)func, param);
+	{
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		if(joinable)
+			pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+		else
+			pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		int code = pthread_create(threadId, &attr, (THREADENTRY)func, param);
+		pthread_attr_destroy(&attr);
+		return code;
+	}
 }
 
 void CThreadHandler::exitThread(void *r)
