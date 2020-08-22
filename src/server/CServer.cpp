@@ -201,7 +201,6 @@ namespace solusek
 			sleep(1);
 		pkg->Server->runNode(pkg->ID, pkg->Socket);
 		delete pkg;
-		//pthread_detach(pthread_self());
 		pthread_exit(0);
 		return 0;
 	}
