@@ -235,7 +235,7 @@ bool CNetHandlerSocket::writeBuffer(const void* buf, int len)
 
 bool CNetHandlerSocket::close()
 {
-	shutdown(SID,2);
+	shutdown(SID, SHUT_RDWR);
 	::close(SID);
 
 	return true;

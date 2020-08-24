@@ -126,9 +126,12 @@ namespace solusek
 		{
 			MainSocket->mutexSSL();
 			MainSocket->setSSLMutual(false);
-			MainSocket->setSSLCertificatePassword(CertPassword.c_str());
-			MainSocket->setSSLCertificate(CertFileName.c_str());
-			MainSocket->setSSLPrivateKeyFile(KeyFileName.c_str());
+			if(CertPassword.size() > 0)
+				MainSocket->setSSLCertificatePassword(CertPassword.c_str());
+			if(CertFileName.size() > 0)
+				MainSocket->setSSLCertificate(CertFileName.c_str());
+			if(KeyFileName.size() > 0)
+				MainSocket->setSSLPrivateKeyFile(KeyFileName.c_str());
 		}
 
 		MainSocket->setTimeout(5);
@@ -389,8 +392,8 @@ namespace solusek
 	void CServer::stop()
 	{
 		StopSignal = true;
-		CNetHandlerSocket *socket = NH.createSocket(Secure);
-		socket->connect("localhost", ListenPort);
+		CNetHandlerSocket *socket = NH.createSocket(false);
+		socket->connect("127.0.0.1", ListenPort);
 		socket->close();
 		delete socket;
 	}
