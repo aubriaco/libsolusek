@@ -21,7 +21,7 @@ if(USE_PQXX)
 endif()
 
 ## Use all the *.cpp files we found under this folder for the project
-FILE(GLOB SRCS "*.cpp" "*.c" "handlers/*.cpp" "server/*.cpp" "client/*.cpp" "util/*.cpp")
+FILE(GLOB SRCS "src/*.cpp" "src/*.c" "src/handlers/*.cpp" "src/server/*.cpp" "src/client/*.cpp" "src/util/*.cpp")
 
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -45,4 +45,4 @@ install(TARGETS ${PROJECT_NAME}
 install(DIRECTORY include/ DESTINATION /usr/local/include)
 
 
-include("../sample-server/CMakeLists.txt")
+include("sample-server/CMakeLists.txt")

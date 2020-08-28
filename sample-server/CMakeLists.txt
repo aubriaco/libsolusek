@@ -7,7 +7,7 @@ set( PROJECT_NAME "sample-server-test" )
 project(${PROJECT_NAME})
 
 ## Use all the *.cpp files we found under this folder for the project
-FILE(GLOB SRCS "../sample-server/*.cpp")
+FILE(GLOB SRCS "${CMAKE_CURRENT_LIST_DIR}/*.cpp")
 
 ## Define the executable
 add_executable(${PROJECT_NAME} ${SRCS})
