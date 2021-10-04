@@ -74,7 +74,7 @@ void CNetHandlerSocket::setupSSL(bool re)
 
 	#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	CTX = SSL_CTX_new(TLS_method());
-	#elif
+	#else
 	CTX = SSL_CTX_new(TLSv1_2_method());
 	#endif
   	SSL_CTX_set_session_id_context(CTX, (const unsigned char *)&ssl_session_ctx_id, sizeof(ssl_session_ctx_id));
