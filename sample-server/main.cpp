@@ -69,6 +69,33 @@ solusek::MResponse getSessionEndpoint(const void *sobj, solusek::MRequest& data)
 	return solusek::MResponse(200, "NO session found. Looking for ID: " + data.SID);
 }
 
+solusek::MResponse setCacheEndpoint(const void *sobj, solusek::MRequest& data)
+{
+	solusek::IServer *server = (solusek::IServer*)sobj;
+
+	auto cache = solusek::createCache();
+
+	cache->set("test", "value1");
+
+	cache->dispose();
+
+	return solusek::MResponse(200, "Cache set.");
+}
+
+solusek::MResponse getCacheEndpoint(const void *sobj, solusek::MRequest& data)
+{
+	solusek::IServer *server = (solusek::IServer*)sobj;
+
+	auto cache = solusek::createCache();
+
+	auto var = cache->get("test");
+
+	cache->dispose();
+
+	return solusek::MResponse(200, "Cache data found: " + var);
+}
+
+
 int main(int argc, char **argv)
 {
 	g_Server = solusek::createServer();
@@ -96,6 +123,8 @@ int main(int argc, char **argv)
 	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cookie/get", getCookieEndpoint, "GET"));
 	g_Server->registerEndpoint(new solusek::MEndpoint("/api/session/set", setSessionEndpoint, "GET"));
 	g_Server->registerEndpoint(new solusek::MEndpoint("/api/session/get", getSessionEndpoint, "GET"));
+	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cache/set", setCacheEndpoint, "GET"));
+	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cache/get", getCacheEndpoint, "GET"));
 
 	g_Server->setThreadLimit(50);
 

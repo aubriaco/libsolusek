@@ -8,6 +8,7 @@
 #define __EDTAPI_INCLUDED__
 #include "IServer.h"
 #include "IClient.h"
+#include "ICache.h"
 #include "INetHandlerSocket.h"
 #include "IFlagCollection.h"
 #include "MFlag.h"
@@ -21,6 +22,7 @@ namespace solusek
 	IServer *createServer();
 	IClient *createClient();
 	INetHandlerSocket *createNetHandlerSocket();
+	ICache *createCache();
 }
 
 #endif

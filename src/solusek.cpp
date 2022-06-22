@@ -7,6 +7,7 @@
 #include "include/solusek/solusek.h"
 #include "server/CServer.h"
 #include "client/CClient.h"
+#include "server/CCache.h"
 #include "handlers/CNetHandler.h"
 
 namespace solusek
@@ -24,5 +25,10 @@ namespace solusek
     INetHandlerSocket* createNetHandlerSocket()
     {
         return new CNetHandlerSocket();
+    }
+
+    ICache* createCache()
+    {
+        return new CCache();
     }
 }

@@ -16,6 +16,7 @@
 #include "CNode.h"
 #include "CDatabase.h"
 #include "CSession.h"
+#include "CCache.h"
 #include <vector>
 
 #define SOLUSEK_DEFAULT_THREAD_LIMIT 25
@@ -52,15 +53,15 @@ namespace solusek
 
 		virtual void registerEndpoint(MEndpoint *ep);
 
-    virtual void registerStaticIndex(const char *name);
+		virtual void registerStaticIndex(const char *name);
 
-    virtual void addStaticDirectory(const char *path, const char *host = 0);
+		virtual void addStaticDirectory(const char *path, const char *host = 0);
 
 		virtual MEndpoint *getEndpoint(const char *path, const char *method);
 
-    virtual MEndpoint *getStaticEndpoint(const char *path, const char *method, const char *host = 0);
+		virtual MEndpoint *getStaticEndpoint(const char *path, const char *method, const char *host = 0);
 
-    virtual MEndpoint *getStaticIndex(const char *path, const char *method, const char *host = 0);
+		virtual MEndpoint *getStaticIndex(const char *path, const char *method, const char *host = 0);
 
 		virtual void dispose();
 
@@ -105,6 +106,8 @@ namespace solusek
 		virtual void addMimeType(const MMimeType& type);
 
 		virtual void removeMimeType(const std::string& ext);
+
+		virtual void setCacheConfig(const std::string& host, int port);
 	};
 
 }

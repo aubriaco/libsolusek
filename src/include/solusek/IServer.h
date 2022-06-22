@@ -41,9 +41,9 @@ namespace solusek
 
 		virtual MEndpoint *getEndpoint(const char *path, const char *method) = 0;
 
-    virtual void addStaticDirectory(const char *path, const char *host = 0) = 0;
+		virtual void addStaticDirectory(const char *path, const char *host = 0) = 0;
 
-    virtual void registerStaticIndex(const char *name) = 0;
+		virtual void registerStaticIndex(const char *name) = 0;
 
 		virtual void setInterruptCallback(void(*callback)(int)) = 0;
 
@@ -60,6 +60,8 @@ namespace solusek
 		virtual void addMimeType(const MMimeType& type) = 0;
 
 		virtual void removeMimeType(const std::string& ext) = 0;
+
+		virtual void setCacheConfig(const std::string& host, int port) = 0;
 	};
 }
 #endif

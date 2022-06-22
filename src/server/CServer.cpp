@@ -49,6 +49,7 @@ namespace solusek
 	{
 		if (Config)
 			delete Config;
+		/*
 		while(!Nodes.empty())
 		{
 			CNode* node = Nodes.back();
@@ -56,6 +57,7 @@ namespace solusek
 			pthread_join(node->getID(),0);
 			delete node;
 		}
+		*/
 		while(!Endpoints.empty())
 		{
 			delete Endpoints.back();
@@ -157,12 +159,13 @@ namespace solusek
 
 			while (!StopSignal)
 			{
-
+				/*
 				while (ThreadCount > ThreadLimit)
 				{
 					sleep(1);
 					continue;
 				}
+				*/
 
 				MainSocket->listen();
 
@@ -187,19 +190,28 @@ namespace solusek
 				pkg->Server = this;
 				pkg->Socket = socket;
 				pkg->ID = 0;
-				THREADID threadId = 0;
+				THREADID threadId = fork();
 
-				TH.create(thread_runNode, (void *)pkg, &threadId, false, false);
-				pkg->ID = threadId;
+				//TH.create(thread_runNode, (void *)pkg, &threadId, false, false);
+				
+				if(threadId == 0)
+				{
+					pkg->Server->runNode(1, pkg->Socket);
+					delete pkg;
+					Log.print("Exiting node!");
+					return E_ERROR_NONE;
+				}
+				else
+					pkg->ID = threadId;
 			}
 
 			MainSocket->close();
 			delete MainSocket;
 
-			if (Nodes.size() > 0)
-				Log.print("Waiting for nodes to gracefully terminate.\n");
-			while (Nodes.size() > 0)
-				sleep(1);
+			//if (Nodes.size() > 0)
+			//	Log.print("Waiting for nodes to gracefully terminate.\n");
+			//while (Nodes.size() > 0)
+			//	sleep(1);
 
 			return E_ERROR_NONE;
 		}
@@ -484,5 +496,11 @@ namespace solusek
 				return;
 			}
 		}
+	}
+
+	void CServer::setCacheConfig(const std::string& host, int port)
+	{
+		CCache::Host = host;
+		CCache::Port = port;
 	}
 } // namespace solusek

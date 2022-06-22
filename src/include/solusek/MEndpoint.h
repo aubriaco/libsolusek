@@ -16,13 +16,13 @@ namespace solusek
 	{
 	public:
 		MEndpoint() {}
-		MEndpoint(const std::string &path, MResponse(*callback)(const void*, MRequest&), const std::string& method)
+		MEndpoint(const std::string &path, MResponse(*callback)(const void*, MRequest&), const std::string& method, const std::string& contentType = "text/plain")
 		{
 			Path = path;
 			Method = method;
 			Callback = callback;
             Type = 0;
-            ContentType = "application/json";
+            ContentType = contentType;
 		}
     	int Type;
 		std::string Path, Method, Contents, Ext, ContentType, Date;

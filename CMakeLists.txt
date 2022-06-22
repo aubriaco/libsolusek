@@ -23,6 +23,10 @@ if(USE_PQXX)
   message("USING PQXX")
   add_definitions(-DUSE_PQXX)
 endif()
+if(USE_REDIS)
+  message("USING REDIS")
+  add_definitions(-DUSE_REDIS)
+endif()
 
 ## Use all the *.cpp files we found under this folder for the project
 FILE(GLOB SRCS "src/*.cpp" "src/*.c" "src/handlers/*.cpp" "src/server/*.cpp" "src/client/*.cpp" "src/util/*.cpp")
@@ -40,6 +44,9 @@ if(USE_MYSQL)
 endif()
 if(USE_PQXX)
   target_link_libraries(${PROJECT_NAME} pqxx)
+endif()
+if(USE_REDIS)
+  target_link_libraries(${PROJECT_NAME} hiredis)
 endif()
 
 install(TARGETS ${PROJECT_NAME}
