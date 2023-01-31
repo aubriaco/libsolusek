@@ -100,6 +100,8 @@ int main(int argc, char **argv)
 {
 	g_Server = solusek::createServer();
 
+	g_Server->setLogEnabled(false);
+
 	g_Server->setInterruptCallback(interruptCallback);
 
 #ifdef USE_MYSQL
@@ -127,6 +129,7 @@ int main(int argc, char **argv)
 	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cache/get", getCacheEndpoint, "GET"));
 
 	g_Server->setThreadLimit(50);
+
 
 	g_Server->run();
 

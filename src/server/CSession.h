@@ -3,6 +3,7 @@
 #include "../include/solusek/ISession.h"
 #include "CVarVal.h"
 #include <vector>
+#include <time.h>
 
 namespace solusek
 {

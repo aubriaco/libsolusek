@@ -23,7 +23,7 @@ CNetHandlerSocket* CNetHandler::createSocket(bool ssl)
 	return new CNetHandlerSocket(0, ssl);
 }
 
-CNetHandlerSocket::CNetHandlerSocket(int sid, bool ssl, bool sslMutual, SSL_CTX* ctx, SSL* _ssl, const char* ipaddr)
+CNetHandlerSocket::CNetHandlerSocket(int sid, bool ssl, bool sslMutual, SSL_CTX* ctx, SSL* _ssl, const std::string& ipaddr)
 {
 	Timeout = 0;
 	_SSL = _ssl;
@@ -35,7 +35,7 @@ CNetHandlerSocket::CNetHandlerSocket(int sid, bool ssl, bool sslMutual, SSL_CTX*
 	ThrowExceptions = false;
 	ClientCertificate = 0;
 	SNIEnabled = false;
-	if(ipaddr)
+	if(!ipaddr.empty())
 		ClientIPAddr = ipaddr;
 	if(SSLEnabled && !_SSL)
 		setupSSL();
@@ -168,9 +168,9 @@ CNetHandlerSocket* CNetHandlerSocket::accept()
 		setupSSLSocket(sid,true);
 
 	CNetHandlerSocket* sock = new CNetHandlerSocket(sid, SSLEnabled, SSLMutual, ChildCTX ? ChildCTX : CTX, _SSL, ipaddr);
-  _SSL = 0;
-  if(SSLEnabled)
-    sock->setSNIHostName(SNIHostName);
+  	_SSL = 0;
+  	if(SSLEnabled)
+    	sock->setSNIHostName(SNIHostName);
 
 	return sock;
 }

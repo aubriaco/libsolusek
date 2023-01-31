@@ -4,6 +4,7 @@
 ** Copyright (c) 2019 Alessandro Ubriaco
 **
 */
+#include <time.h>
 #include "CDatabaseInstance.h"
 #include "CDatabase.h"
 #include "CTransaction.h"

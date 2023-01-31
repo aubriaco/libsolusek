@@ -6,6 +6,7 @@
 */
 #ifndef __C_DATABASE_INCLUDED__
 #define __C_DATABASE_INCLUDED__
+#include <pthread.h>
 #include "../handlers/CDatabaseHandler.h"
 #include "../include/solusek/IDatabase.h"
 #include "../include/solusek/IDatabaseInstance.h"

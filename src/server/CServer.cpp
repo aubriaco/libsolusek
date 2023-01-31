@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <openssl/ssl.h>
 #include <openssl/crypto.h>
+#include <sys/prctl.h>
 
 namespace solusek
 {
@@ -190,23 +191,31 @@ namespace solusek
 				pkg->Server = this;
 				pkg->Socket = socket;
 				pkg->ID = 0;
-				THREADID threadId = fork();
-
-				//TH.create(thread_runNode, (void *)pkg, &threadId, false, false);
 				
+				
+				THREADID threadId = 0;
+				//THREADID threadId = fork();
+
+				TH.create(thread_runNode, (void *)pkg, &threadId, false, false);
+				pkg->ID = threadId;
+				
+				/*
 				if(threadId == 0)
 				{
 					pkg->Server->runNode(1, pkg->Socket);
-					delete pkg;
 					Log.print("Exiting node!");
 					return E_ERROR_NONE;
 				}
 				else
+				{
 					pkg->ID = threadId;
+				}
+				*/
 			}
 
 			MainSocket->close();
 			delete MainSocket;
+			MainSocket = 0;
 
 			//if (Nodes.size() > 0)
 			//	Log.print("Waiting for nodes to gracefully terminate.\n");
@@ -218,6 +227,7 @@ namespace solusek
 		else
 		{
 			delete MainSocket;
+			MainSocket = 0;
 			Log.print("ERROR: Could not bind.\n");
 			return E_ERROR_UNKNOWN;
 		}

@@ -26,10 +26,13 @@ namespace solusek
 
 	CNode::~CNode()
 	{
+		if(Socket)
+			delete Socket;
 		Log.print("Cleaning up node.\n");
 		for (std::vector<CVarVal *>::iterator it = Headers.begin(); it != Headers.end(); ++it)
 		{
-			delete (*it);
+			if((*it))
+				delete (*it);
 		}
 		Log.print("Node cleanup complete.\n");
 	}
@@ -146,6 +149,7 @@ namespace solusek
 		Log.print("Exiting node!\n");
 		Socket->close();
 		delete Socket;
+		Socket = 0;
 		Log.print("Exited node.\n");
 		time_t diff = time(0) - start;
 		char s[128];

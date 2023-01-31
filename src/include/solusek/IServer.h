@@ -62,6 +62,8 @@ namespace solusek
 		virtual void removeMimeType(const std::string& ext) = 0;
 
 		virtual void setCacheConfig(const std::string& host, int port) = 0;
+
+		virtual void setLogEnabled(bool enabled) = 0;
 	};
 }
 #endif

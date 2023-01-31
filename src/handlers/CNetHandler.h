@@ -80,7 +80,7 @@ public:
 	void setCTX(void *ctx);
 	void setChildCTX(void *ctx);
 
-	CNetHandlerSocket(int sid = 0, bool ssl = false, bool sslMutual = false, SSL_CTX* ctx = 0, SSL* _ssl = 0, const char* ipaddr = 0);
+	CNetHandlerSocket(int sid = 0, bool ssl = false, bool sslMutual = false, SSL_CTX* ctx = 0, SSL* _ssl = 0, const std::string& ipaddr = std::string());
 	~CNetHandlerSocket();
 
 	bool isReady() { return Ready; }
