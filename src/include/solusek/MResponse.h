@@ -16,8 +16,8 @@ namespace solusek
 	class MResponse
 	{
 	public:
-		MResponse() { ContentType = "application/json"; Code = 200; }
-		MResponse(int code, const std::string &body, const std::string& sid = std::string()) : Code(code), Body(body), SID(sid) { ContentType = "application/json"; }
+		MResponse() { ContentType = "text/plain"; Code = 200; }
+		MResponse(int code, const std::string &body, const std::string& sid = std::string(), const std::string& contentType = "text/plain") : Code(code), Body(body), ContentType(contentType), SID(sid) { ContentType = "text/plain"; }
 
 		int Code;
 		std::string Body, ContentType, Date, SID, Location;
