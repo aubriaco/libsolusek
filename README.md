@@ -1,4 +1,4 @@
-# DEPRECATED
+# ⛔️ DEPRECATED
 
 This project is no longer supported. Please consider using [Alternative Project](link-to-alternative) instead.
 
