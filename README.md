@@ -122,5 +122,7 @@ int main(int argc, char **argv)
 ## Credits
 
 Created by Alessandro Ubriaco
+
 <https://alessandroubriaco.com/>
+
 <https://solusek.com/>
