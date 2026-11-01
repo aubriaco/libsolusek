@@ -81,6 +81,7 @@ namespace solusek
 				MRequest request(Body);
 				request.QueryString = QueryString;
 				request.Host = host;
+				request.Headers = &Headers;
 				if (IVarVal *h = getHeader("X-SSL-Client-CN"))
 					request.SSLClientCN = h->getVal();
 				if (IVarVal *h = getHeader("Cookie"))

@@ -96,6 +96,18 @@ solusek::MResponse getCacheEndpoint(const void *sobj, solusek::MRequest &data)
 	return solusek::MResponse(200, "Cache data found: " + var);
 }
 
+solusek::MResponse getAuthorizationHeaderTest(const void *sobj, solusek::MRequest &data)
+{
+	solusek::IServer *server = (solusek::IServer *)sobj;
+
+	auto auth = data.getHeader("Authorization");
+
+	if (!auth)
+		return solusek::MResponse(300, "No authorization header set.");
+
+	return solusek::MResponse(200, std::string("Auth header: ") + auth->getVal());
+}
+
 int main(int argc, char **argv)
 {
 	g_Server = solusek::createServer();
@@ -135,6 +147,7 @@ int main(int argc, char **argv)
 	g_Server->registerEndpoint(new solusek::MEndpoint("/api/session/get", getSessionEndpoint, "GET"));
 	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cache/set", setCacheEndpoint, "GET"));
 	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cache/get", getCacheEndpoint, "GET"));
+	g_Server->registerEndpoint(new solusek::MEndpoint("/api/auth/test", getAuthorizationHeaderTest, "GET"));
 
 	g_Server->setThreadLimit(50);
 
