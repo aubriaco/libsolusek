@@ -83,11 +83,19 @@ bool CDatabaseHandler::open()
 		enum mysql_protocol_type prot_type = MYSQL_PROTOCOL_TCP;
 		mysql_options(C, MYSQL_OPT_PROTOCOL, (void *)&prot_type);
 		if(!mysql_real_connect(C, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
+		{
+			mysql_close(C);
+			C = 0;
 			return false;
+		}
 	}
 
 	if(mysql_select_db(C, dbname.c_str()) != 0)
+	{
+		mysql_close(C);
+		C = 0;
 		return false;
+	}
 
 	return true;
 }
@@ -115,28 +123,27 @@ int CDatabaseTransaction::exec(const std::string &s)
 
 CDatabaseResource *CDatabaseTransaction::insert(const std::string &s, const std::string &idField)
 {
+	(void)idField;
 	if(!C)
 		throw std::runtime_error("Not connected.");
-	if(mysql_real_query(C, s.c_str(), s.size()) == 0)
-	{
-		MYSQL_RES *res = mysql_store_result(C);
-		if(res)
-		{
-			unsigned long int iid = mysql_insert_id(C);
-			char buf[64];
-			snprintf(buf, 64, "%lu", iid);
-			CDatabaseResource *r = new CDatabaseResource(res, buf);
-			mysql_free_result(res);
-			return r;
-		}
-	}
-	else
-	{
-		fprintf(stderr, "QUERY ERROR: %s\n", s.c_str());
-		return new CDatabaseResource(s);
-	}
-}
 
+	if(mysql_real_query(C, s.c_str(), static_cast<unsigned long>(s.size())) != 0)
+	{
+		fprintf(stderr, "QUERY ERROR: %s\n", mysql_error(C));
+		return new CDatabaseResource(mysql_error(C));
+	}
+
+	// INSERT/UPDATE statements normally have no result set. mysql_insert_id()
+	// is still valid in that case; do not treat a null MYSQL_RES as failure.
+	MYSQL_RES *res = mysql_store_result(C);
+	if (!res && mysql_field_count(C) != 0)
+		return new CDatabaseResource(mysql_error(C));
+
+	char buf[64];
+	snprintf(buf, sizeof(buf), "%llu", static_cast<unsigned long long>(mysql_insert_id(C)));
+	// CDatabaseResource takes ownership of res (including a null result).
+	return new CDatabaseResource(res, buf);
+}
 
 
 bool CDatabaseTransaction::query(const std::string &s, void(*callback)(const DBROW &, void *), void *param)

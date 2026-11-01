@@ -18,7 +18,6 @@ namespace solusek
 		ExpireSeconds = SOLUSEK_DBPOOL_EXPIRESECONDS;
 		Running = true;
 		TID = 0;
-		Hold = false;
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -28,10 +27,9 @@ namespace solusek
 
 	CDatabase::~CDatabase()
 	{
-		closeAll();
-		Running = false;
-		Hold = false;
+		Running.store(false, std::memory_order_release);
 		pthread_join(TID, 0);
+		closeAll();
 	}
 
 	void *CDatabase::poolThread(void *param)
@@ -43,29 +41,25 @@ namespace solusek
 
 	void CDatabase::_poolThread()
 	{
-		time_t t;
-		while(Running)
+		while (Running.load(std::memory_order_acquire))
 		{
-			while(Running && Hold)
-				usleep(1);
-			if(!Running)
-				break;
-			Hold = true;
-			t = time(0);
-			std::vector<IDatabaseInstance*>::iterator it = Instances.begin();
-			while(it != Instances.end())
 			{
-				if(!((CDatabaseInstance*)(*it))->inUse() && time(0) - ((CDatabaseInstance*)(*it))->getT() > ExpireSeconds)
+				std::lock_guard<std::mutex> guard(InstancesMutex);
+				const time_t now = time(0);
+				std::vector<IDatabaseInstance*>::iterator it = Instances.begin();
+				while (it != Instances.end())
 				{
-					CDatabaseInstance *i = (CDatabaseInstance*)(*it);
-					fprintf(stdout, "DB Pool: Expired: %lu\n", i->getID());
-					delete i;
-					Instances.erase(it);
+					CDatabaseInstance *instance = static_cast<CDatabaseInstance*>(*it);
+					if (!instance->inUse() && now - instance->getT() > ExpireSeconds)
+					{
+						fprintf(stdout, "DB Pool: Expired: %lu\n", instance->getID());
+						delete instance;
+						it = Instances.erase(it);
+					}
+					else
+						++it;
 				}
-				else
-					it++;
 			}
-			Hold = false;
 			sleep(1);
 		}
 	}
@@ -74,8 +68,11 @@ namespace solusek
 	{
 		for(std::vector<IDatabaseInstance*>::iterator it = Instances.begin(); it != Instances.end(); ++it)
 		{
-			if(!((CDatabaseInstance*)(*it))->inUse() && ConnectionString == ((CDatabaseInstance*)(*it))->getConnectionString())
+			if(!((CDatabaseInstance*)(*it))->inUse() && cs == ((CDatabaseInstance*)(*it))->getConnectionString())
+			{
+				((CDatabaseInstance*)(*it))->putInUse();
 				return (*it);
+			}
 		}
 		return 0;
 	}
@@ -83,16 +80,16 @@ namespace solusek
 	IDatabaseInstance *CDatabase::open()
 	{
 		IDatabaseInstance *di;
-		while(Hold)
-			usleep(1);
-		Hold = true;
+		std::lock_guard<std::mutex> guard(InstancesMutex);
 		di = getUnusedInstance(ConnectionString);
-		Hold = false;
 		if(!di)
 		{
 			di = new CDatabaseInstance(this, ConnectionString);
 			if(!di->isConnected())
+			{
+				delete di;
 				throw std::runtime_error("Failed to open connection to database.");
+			}
 			Instances.push_back(di);
 		}
 		return di;
@@ -100,19 +97,17 @@ namespace solusek
 
 	void CDatabase::closeAll()
 	{
-		while(Hold)
-			usleep(1);
-		Hold = true;
+		std::lock_guard<std::mutex> guard(InstancesMutex);
 		while(!Instances.empty())
 		{
 			delete (CDatabaseInstance*)Instances.back();
 			Instances.pop_back();
 		}
-		Hold = false;
 	}
 
 	void CDatabase::setConnectionString(const std::string &cs)
 	{
+		std::lock_guard<std::mutex> guard(InstancesMutex);
 		ConnectionString = cs;
 	}
 
@@ -132,6 +127,7 @@ namespace solusek
 
 	void CDatabase::removeInstance(IDatabaseInstance* i)
 	{
+		std::lock_guard<std::mutex> guard(InstancesMutex);
 		for(std::vector<IDatabaseInstance*>::iterator it = Instances.begin(); it != Instances.end(); ++it)
 		{
 			if((*it) == i)

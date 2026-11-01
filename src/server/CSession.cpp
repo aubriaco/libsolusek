@@ -1,17 +1,18 @@
 #include "CSession.h"
+#include <atomic>
+#include <cstdio>
 
 namespace solusek
 {
-  static unsigned long int Incremental = 0;
+  static std::atomic<unsigned long long> Incremental(0);
 
   CSession::CSession()
   {
-    if(Incremental >= 4294967295)
-      Incremental = 0;
+    const unsigned long long sequence = Incremental.fetch_add(1, std::memory_order_relaxed);
     char buf[128];
-    sprintf(buf, "%lu%lu", time(0), Incremental);
+    std::snprintf(buf, sizeof(buf), "%lld-%llu",
+                  static_cast<long long>(time(0)), sequence);
     ID = buf;
-    Incremental++;
   }
 
   CSession::~CSession()
@@ -44,10 +45,12 @@ namespace solusek
   {
     CVarVal *vv = get(name);
     if(!vv)
+    {
       vv = new CVarVal();
+      Items.push_back(vv);
+    }
     vv->Var = name;
     vv->Val = value;
-    Items.push_back(vv);
   }
 
 }

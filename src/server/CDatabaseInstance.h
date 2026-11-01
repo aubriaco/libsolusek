@@ -8,6 +8,7 @@
 #define __C_DATABASEINSTANCE_INCLUDED__
 #include "../include/solusek/IDatabaseInstance.h"
 #include "../handlers/CDatabaseHandler.h"
+#include <atomic>
 
 namespace solusek
 {
@@ -20,7 +21,7 @@ namespace solusek
 		CDatabaseHandler H;
 		bool Connected;
 		void *D;
-		bool Used;
+		std::atomic<bool> Used;
 		std::string ConnectionString;
 		time_t T;
 	public:
@@ -28,8 +29,8 @@ namespace solusek
 		~CDatabaseInstance();
 
 		size_t getID() { return ID; }
-		bool inUse() { return Used; }
-		void putInUse() { Used = true; T = time(0); }
+		bool inUse() { return Used.load(std::memory_order_acquire); }
+		void putInUse() { T = time(0); Used.store(true, std::memory_order_release); }
 		std::string getConnectionString() { return ConnectionString; }
 		time_t getT() { return T; }
 

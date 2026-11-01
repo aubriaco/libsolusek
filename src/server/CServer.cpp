@@ -160,22 +160,20 @@ namespace solusek
 
 			while (!StopSignal)
 			{
-				/*
-				while (ThreadCount > ThreadLimit)
-				{
+				while (!StopSignal && ThreadCount.load(std::memory_order_acquire) >= ThreadLimit)
 					sleep(1);
-					continue;
-				}
-				*/
+				if (StopSignal)
+					break;
 
 				MainSocket->listen();
 
 				CNetHandlerSocket *socket = MainSocket->accept();
+				if (!socket) // rejected/failed connection
+					continue;
 
-				ThreadCount++;
-
+				const unsigned int activeThreads = ThreadCount.fetch_add(1, std::memory_order_acq_rel) + 1;
 				char tlimit[128];
-				sprintf(tlimit, "Thread Count %u of %u allowed.\n", ThreadCount, ThreadLimit);
+				snprintf(tlimit, sizeof(tlimit), "Thread Count %u of %u allowed.\n", activeThreads, ThreadLimit);
 				Log.print(tlimit);
 
 				if (StopSignal)
@@ -196,7 +194,16 @@ namespace solusek
 				THREADID threadId = 0;
 				//THREADID threadId = fork();
 
-				TH.create(thread_runNode, (void *)pkg, &threadId, false, false);
+				const int threadStatus = TH.create(thread_runNode, (void *)pkg, &threadId, false, false);
+				if (threadStatus != 0)
+				{
+					Log.print("ERROR: Could not create client thread.\n");
+					delete pkg;
+					socket->close();
+					delete socket;
+					ThreadCount.fetch_sub(1, std::memory_order_acq_rel);
+					continue;
+				}
 				pkg->ID = threadId;
 				
 				/*
@@ -249,13 +256,17 @@ namespace solusek
 		Log.print("Running node...\n");
 		Log.print("Thread ID: " + std::to_string(id) + "\n");
 		CNode *node = new CNode(id, this, socket);
-		Nodes.push_back(node);
+		{
+			std::lock_guard<std::mutex> guard(NodesMutex);
+			Nodes.push_back(node);
+		}
 		node->run();
-		ThreadCount--;
+		ThreadCount.fetch_sub(1, std::memory_order_acq_rel);
 	}
 
 	void CServer::removeNode(CNode *node)
 	{
+		std::lock_guard<std::mutex> guard(NodesMutex);
 		for (std::vector<CNode *>::iterator it = Nodes.begin(); it != Nodes.end(); ++it)
 		{
 			if ((*it) == node)
@@ -390,7 +401,7 @@ namespace solusek
 					endpoint->Method = method;
 					endpoint->Ext = ext;
 					std::vector<unsigned char> data = readBinaryFile(dpath);
-					endpoint->Contents = std::string((const char *)&data[0], data.size());
+					endpoint->Contents = std::string(data.empty() ? "" : reinterpret_cast<const char *>(data.data()), data.size());
 					endpoint->Type = 1;
 					endpoint->ContentType = mime->Type;
 				}
@@ -407,7 +418,7 @@ namespace solusek
 				endpoint->Method = method;
 				endpoint->Ext = ext;
 				std::vector<unsigned char> data = readBinaryFile(dpath);
-				endpoint->Contents = std::string((const char *)&data[0], data.size());
+				endpoint->Contents = std::string(data.empty() ? "" : reinterpret_cast<const char *>(data.data()), data.size());
 				endpoint->Type = 1;
 				endpoint->ContentType = "application/force-download";
 			}

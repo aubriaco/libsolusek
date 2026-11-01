@@ -10,6 +10,7 @@
 #include "../include/solusek/ITransaction.h"
 #include "../include/solusek/MDatabaseHandle.h"
 #include <vector>
+#include <mutex>
 
 namespace solusek
 {
@@ -21,10 +22,10 @@ namespace solusek
 
 		std::vector<MDatabaseHandle*> Handles;
 
-		static bool Lock;
+		static std::mutex Lock;
 
 	public:
-		CTransaction(void *h, CDatabaseTransaction *t) : T(t) {}
+		CTransaction(void *h, CDatabaseTransaction *t) : T(t), H(h) {}
 		~CTransaction();
 
 		virtual void dispose();

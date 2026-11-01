@@ -8,10 +8,11 @@
 #include "../include/solusek/string_util.h"
 #include "CDatabaseHandle.h"
 #include <unistd.h>
+#include <mutex>
 
 namespace solusek
 {
-	bool CTransaction::Lock = false;
+	std::mutex CTransaction::Lock;
 
 
 	CTransaction::~CTransaction()
@@ -22,18 +23,13 @@ namespace solusek
 
 	int CTransaction::exec(const std::string &s)
 	{
-		CDatabaseHandler *h = (CDatabaseHandler*)H;
-		while(Lock)
-			usleep(1);
-		Lock = true;
+		std::lock_guard<std::mutex> guard(Lock);
 		int r = T->exec(s);
-		Lock = false;
 		return r;
 	}
 
 	MDatabaseHandle *CTransaction::insert(const char *tableName, std::map<std::string, std::string> vars)
 	{
-		CDatabaseHandler *h = (CDatabaseHandler*)H;
 		std::string acc(""), vals("");
 		for(std::map<std::string,std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
 		{
@@ -55,18 +51,14 @@ namespace solusek
 		builder += vals;
 		builder += ")";
 
-		while(Lock)
-			usleep(1);
-		Lock = true;
+		std::lock_guard<std::mutex> guard(Lock);
 		MDatabaseHandle *r = new CDatabaseHandle(T->insert(builder, "id"));
-		Lock = false;
 		Handles.push_back(r);
 		return r;
 	}
 
 	bool CTransaction::update(const char *tableName, std::map<std::string, std::string> find, std::map<std::string, std::string> vars)
 	{
-		CDatabaseHandler *h = (CDatabaseHandler*)H;
 		std::string acc(""), vals("");
 		for(std::map<std::string,std::string>::iterator it = find.begin(); it != find.end(); ++it)
 		{
@@ -74,7 +66,7 @@ namespace solusek
 				acc += " AND ";
 			acc += it->first;
 			acc += "='";
-			acc += it->second;
+			acc += esc(it->second);
 			acc += "'";
 		}
 		for(std::map<std::string,std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
@@ -94,11 +86,8 @@ namespace solusek
 		builder += " WHERE ";
 		builder += acc;
 
-		while(Lock)
-			usleep(1);
-		Lock = true;
+		std::lock_guard<std::mutex> guard(Lock);
 		bool r = T->query(builder,0);
-		Lock = false;
 		return r;
 	}
 
@@ -135,11 +124,8 @@ namespace solusek
 		}
 		builder += " LIMIT 1";
 
-		while(Lock)
-			usleep(1);
-		Lock = true;
+		std::lock_guard<std::mutex> guard(Lock);
 		MDatabaseHandle *r = new CDatabaseHandle(T->queryOne(builder));
-		Lock = false;
 		Handles.push_back(r);
 		return r;
 	}
@@ -148,11 +134,8 @@ namespace solusek
 	{
 		CDatabaseResource* rs = new CDatabaseResource(0, "");
 
-		while(Lock)
-			usleep(1);
-		Lock = true;
+		std::lock_guard<std::mutex> guard(Lock);
 		T->query(query, selectCallback, rs);
-		Lock = false;
 
 		MDatabaseHandle *r = new CDatabaseHandle(rs);
 		Handles.push_back(r);
@@ -198,11 +181,8 @@ namespace solusek
 
 
 		CDatabaseResource* rs = new CDatabaseResource(0, "");
-		while(Lock)
-			usleep(1);
-		Lock = true;
+		std::lock_guard<std::mutex> guard(Lock);
 		T->query(builder, selectCallback, rs);
-		Lock = false;
 		MDatabaseHandle *r = new CDatabaseHandle(rs);
 		Handles.push_back(r);
 		return r;
@@ -227,11 +207,8 @@ namespace solusek
 	void CTransaction::commit()
 	{
 		//T->commit();
-		while(Lock)
-			usleep(1);
-		Lock = true;
+		std::lock_guard<std::mutex> guard(Lock);
 		T->exec("commit;");
-		Lock = false;
 	}
 
 	void CTransaction::cleanup()
@@ -245,11 +222,8 @@ namespace solusek
 
 	std::string CTransaction::esc(const std::string esc)
 	{
-		while(Lock)
-			usleep(1);
-		Lock = true;
+		std::lock_guard<std::mutex> guard(Lock);
 		std::string r = T->esc(esc);
-		Lock = false;
 		return r;
 	}
 }

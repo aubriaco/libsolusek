@@ -7,6 +7,7 @@
 #ifdef USE_OPENSSL
 #include "CNetHandler.h"
 #include <stdlib.h>
+#include <errno.h>
 
 using namespace solusek;
 
@@ -58,11 +59,10 @@ void CNetHandlerSocket::mutexSSL()
 bool CNetHandlerSocket::isConnected()
 {
 	char buf;
-	int err = recv(SID, &buf, 1, MSG_PEEK);
-	if(err == SOCKET_ERROR)
+	if (SID < 0)
 		return false;
-	else
-		return true;
+	int err = recv(SID, &buf, 1, MSG_PEEK | MSG_DONTWAIT);
+	return err > 0 || (err < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
 }
 
 void CNetHandlerSocket::setupSSL(bool re)
@@ -287,7 +287,10 @@ bool CNetHandlerSocket::isSSLValid()
 
 static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
-	return 1;
+	// Never override OpenSSL chain validation: doing so accepts invalid or
+	// untrusted client certificates when mutual TLS is enabled.
+	(void)ctx;
+	return preverify_ok;
 }
 
 void CNetHandlerSocket::setSSLMutual(bool enabled)

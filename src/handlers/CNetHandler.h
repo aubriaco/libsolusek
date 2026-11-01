@@ -19,7 +19,7 @@
 #	include <sys/socket.h>
 #	include <netinet/in.h>
 #	include <netdb.h>
-#	define INVALID_SOCKET 0
+#	define INVALID_SOCKET -1
 #	define SOCKET_ERROR -1
 #endif
 

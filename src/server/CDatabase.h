@@ -7,6 +7,8 @@
 #ifndef __C_DATABASE_INCLUDED__
 #define __C_DATABASE_INCLUDED__
 #include <pthread.h>
+#include <mutex>
+#include <atomic>
 #include "../handlers/CDatabaseHandler.h"
 #include "../include/solusek/IDatabase.h"
 #include "../include/solusek/IDatabaseInstance.h"
@@ -20,7 +22,8 @@ namespace solusek
 	private:
 		std::string ConnectionString;
 		std::vector<IDatabaseInstance*> Instances;
-		bool Running, Hold;
+		std::atomic<bool> Running;
+		std::mutex InstancesMutex;
 		pthread_t TID;
 		int ExpireSeconds;
 	public:

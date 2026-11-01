@@ -18,6 +18,8 @@
 #include "CSession.h"
 #include "CCache.h"
 #include <vector>
+#include <atomic>
+#include <mutex>
 
 #define SOLUSEK_DEFAULT_THREAD_LIMIT 25
 
@@ -42,8 +44,10 @@ namespace solusek
     std::vector<std::string> StaticIndexes;
 		std::vector<CSession*> Sessions;
 		std::vector<MMimeType> MimeTypes;
-		bool StopSignal;
-		unsigned int ThreadLimit, ThreadCount;
+		std::atomic<bool> StopSignal;
+		unsigned int ThreadLimit;
+		std::atomic<unsigned int> ThreadCount;
+		std::mutex NodesMutex;
 	public:
 
 		CServer();
@@ -93,7 +97,7 @@ namespace solusek
 
 		virtual void stop();
 
-		virtual void setThreadLimit(unsigned int limit) { ThreadLimit = limit; }
+		virtual void setThreadLimit(unsigned int limit) { ThreadLimit = limit ? limit : 1; }
 
 		virtual ISession *startSession();
 

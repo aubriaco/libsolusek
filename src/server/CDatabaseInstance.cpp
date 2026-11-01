@@ -25,7 +25,7 @@ namespace solusek
 		Connected = H.open();
 		if(!Connected)
 		{
-			Used = false;
+			Used.store(false, std::memory_order_release);
 			T = 0;
 		}		
 	}
@@ -37,7 +37,7 @@ namespace solusek
 
 	void CDatabaseInstance::dispose()
 	{
-		Used = false;
+		Used.store(false, std::memory_order_release);
 	}
 
 	ITransaction *CDatabaseInstance::begin()

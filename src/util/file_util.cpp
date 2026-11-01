@@ -25,24 +25,23 @@ namespace solusek
 
     std::vector<unsigned char> readBinaryFile(const std::string& fname)
     {
-      std::vector<unsigned char> r;
-      FILE* file = fopen(fname.c_str(), "r");
-      if(file)
+      std::vector<unsigned char> result;
+      FILE* file = fopen(fname.c_str(), "rb");
+      if (!file)
+        return result;
+
+      if (fseek(file, 0, SEEK_END) == 0)
       {
-        fseek(file, 0, SEEK_END);
-        size_t len = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        unsigned int rd = 512;
-        char buf[512];
-        for(unsigned int n = 0; n < len; n += 512)
+        const long fileSize = ftell(file);
+        if (fileSize > 0 && fseek(file, 0, SEEK_SET) == 0)
         {
-            if(n + 512 > len)
-                rd = len - n;
-            fread(buf, 1, rd, file);
-            r.insert(r.end(), buf, buf + rd);
+          result.resize(static_cast<size_t>(fileSize));
+          const size_t bytesRead = fread(result.data(), 1, result.size(), file);
+          result.resize(bytesRead);
         }
       }
-      return r;
+      fclose(file);
+      return result;
     }
 
 }

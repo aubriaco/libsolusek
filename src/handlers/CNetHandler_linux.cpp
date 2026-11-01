@@ -8,6 +8,7 @@
 #include "CNetHandler.h"
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <cerrno>
 
 using namespace solusek;
 
@@ -215,23 +216,42 @@ bool CNetHandlerSocket::connect(const char* host, int port)
 
 bool CNetHandlerSocket::writeBuffer(const void* buf, int len)
 {
-	int r = 0;
-	if(SSLEnabled)
-		r = ::SSL_write(_SSL, (const char*)buf, len);
-	else
-		r = ::send(SID, (const char*) buf, len, MSG_NOSIGNAL);
-
-	if(ThrowExceptions && r < 1)
-		throw r;
-	return (r >= 0);
+	if (len < 0 || (len > 0 && !buf) || SID < 0)
+		return false;
+	const char *data = static_cast<const char*>(buf);
+	int offset = 0;
+	while (offset < len)
+	{
+		int written;
+		if (SSLEnabled)
+			written = ::SSL_write(_SSL, data + offset, len - offset);
+		else
+		{
+			written = static_cast<int>(::send(SID, data + offset,
+				static_cast<size_t>(len - offset), MSG_NOSIGNAL));
+			if (written < 0 && errno == EINTR)
+				continue;
+		}
+		if (written <= 0)
+		{
+			if (ThrowExceptions)
+				throw written;
+			return false;
+		}
+		offset += written;
+	}
+	return true;
 }
 
 
 bool CNetHandlerSocket::close()
 {
-	shutdown(SID, SHUT_RDWR);
-	::close(SID);
-
+	if (SID >= 0)
+	{
+		::shutdown(SID, SHUT_RDWR);
+		::close(SID);
+		SID = -1;
+	}
 	return true;
 }
 
