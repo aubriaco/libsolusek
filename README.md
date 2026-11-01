@@ -1,100 +1,110 @@
 # libsolusek
 
-**libsolusek** is a C++ library designed to embed an HTTP/HTTPS server directly into your applications. It provides a lightweight, flexible foundation for building web services, REST APIs, and network-enabled applications without requiring a separate web server.
+**libsolusek** is a C++ library for embedding an HTTP/HTTPS server directly into an application. It provides HTTP request and response handling, static-file serving, sessions, and optional database and caching integrations—without requiring a separate web-server process.
 
-The library includes HTTP request and response handling, SSL/TLS support, session management, database connectivity, and caching capabilities.
+Use it to build local administration interfaces, REST-style endpoints, internal services, or other network-enabled C++ applications.
 
-## Key Features
+## Features
 
-- **Embedded HTTP/HTTPS Server** – Run a web server directly within your C++ application.
-- **SSL/TLS Support** – Secure connections using OpenSSL.
-- **Database Integration** – Support for PostgreSQL and MySQL/MariaDB.
-- **Redis Integration** – Caching and session-related functionality.
-- **Session Management** – Manage application sessions and state.
-- **Multithreaded Processing** – Handle concurrent client connections.
-- **CMake Build System** – Build and integrate the library into Linux-based applications.
+- **Embedded HTTP/HTTPS server** — Host endpoints inside your application.
+- **TLS support** — Secure connections using OpenSSL.
+- **HTTP routing** — Register endpoints with handlers and HTTP methods.
+- **Static content** — Serve files from configured directories and specify an index file.
+- **Sessions and cookies** — Maintain session state and set response cookies.
+- **Concurrent connections** — Process multiple clients.
+- **Optional database backends** — Enable MySQL/MariaDB or PostgreSQL (`libpqxx`) support at build time.
+- **Optional Redis support** — Enable Redis integration with `hiredis`.
+- **CMake build** — Build the shared library and bundled sample server.
 
-## Use Cases
+## Requirements
 
-Ideal for embedded web interfaces, REST APIs, backend services, administration portals, and applications requiring integrated HTTP/HTTPS functionality.
+- A C++ compiler and CMake
+- OpenSSL development libraries (required by the current CMake configuration)
+- Optional development libraries for any enabled database or Redis backend
 
-## Dependencies
+### Install dependencies
 
-For `-DUSE_OPENSSL` you need `libssl`.
-
-On Ubuntu:
-
-```bash
-sudo apt-get install libssl-dev
-```
-
-On RedHat:
+**Debian / Ubuntu**
 
 ```bash
-sudo yum install openssl-devel
+sudo apt-get update
+sudo apt-get install -y build-essential cmake libssl-dev
 ```
 
-On Alpine:
+For optional integrations:
 
 ```bash
-sudo apt add openssl-dev
+sudo apt-get install -y libmariadb-dev libpqxx-dev libhiredis-dev
 ```
 
-For `-DUSE_MYSQL` you need `libmariadb`.
-
-On Ubuntu:
+**Fedora / RHEL-family distributions**
 
 ```bash
-sudo apt-get install libmariadb-dev
+sudo dnf install cmake gcc-c++ make openssl-devel
 ```
 
-On RedHat:
+Install the corresponding MySQL/MariaDB, `libpqxx`, or `hiredis` development packages if enabling those integrations. Package names vary by distribution and release.
+
+**Alpine Linux**
 
 ```bash
-sudo yum install mariadb-shared
+sudo apk add build-base cmake openssl-dev
 ```
 
-For `-DUSE_PQXX` you need `libpqxx`
+## Build
 
-On Ubuntu:
+From the repository root:
 
 ```bash
-sudo apt-get install libpqxx-dev
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
 ```
 
-If neither `-DUSE_MYSQL` or `-DUSE_PQXX` is defined the database layer will be defined empty (for applications that don't use MySQL nor PostgreSQL this is recommended.)
+The project builds a shared library and the bundled `sample-server-test` example.
 
-## To build library
+### Optional backends
+
+The following CMake variables enable additional integrations:
+
+| Variable | Backend | Required development library |
+| --- | --- | --- |
+| `USE_MYSQL` | MySQL / MariaDB | MySQL-compatible client library |
+| `USE_PQXX` | PostgreSQL | `libpqxx` |
+| `USE_REDIS` | Redis | `hiredis` |
+
+For example, to enable PostgreSQL and Redis:
 
 ```bash
-mkdir build
-cd build
-cmake ..
-make
-sudo make install
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DUSE_PQXX=ON -DUSE_REDIS=ON
+cmake --build build --parallel
 ```
 
-Post-build: Only on Ubuntu:
+If neither `USE_MYSQL` nor `USE_PQXX` is enabled, the library builds without a database backend. OpenSSL is enabled by the current build configuration; `USE_OPENSSL` is not currently an optional CMake switch.
+
+### Install
+
+The repository's CMake configuration includes install rules for the library and public headers:
 
 ```bash
-sudo ldconfig
+sudo cmake --install build
+sudo ldconfig  # Linux systems using ldconfig, such as Debian/Ubuntu
 ```
 
-I still haven't added a make install so you might want to copy the library so to your /usr/local/lib/ directory.
+The existing install rules target `/usr/local/lib` and `/usr/local/include`. Review them before using a custom installation prefix or packaging the library for a distribution.
 
-## Examples
+## Example: embedded HTTP server
 
-I included an example app called sample-server:
+The repository includes a sample application in `sample-server/`. The following example registers an endpoint that sets a cookie and serves static content:
 
-```c++
+```cpp
 #include <solusek/solusek.h>
 
 static solusek::IServer *g_Server;
 
 void interruptCallback(int sig)
 {
- printf("Interrupt signal called.\n");
- g_Server->stop();
+    printf("Interrupt signal called.\n");
+    g_Server->stop();
 }
 
 solusek::MResponse cookieEndpoint(const void *sobj, const solusek::MRequest& data)
@@ -113,32 +123,43 @@ solusek::MResponse cookieEndpoint(const void *sobj, const solusek::MRequest& dat
 
 int main(int argc, char **argv)
 {
-     g_Server = solusek::createServer();
+    g_Server = solusek::createServer();
+    g_Server->setInterruptCallback(interruptCallback);
+    g_Server->setListenPort(8080);
 
-     g_Server->setInterruptCallback(interruptCallback);
+    // Static files and default index
+    g_Server->addStaticDirectory("../static/");
+    g_Server->registerStaticIndex("index.html");
 
-     g_Server->setListenPort(8080);
+    // HTTP GET /api/cookie
+    g_Server->registerEndpoint(
+        new solusek::MEndpoint("/api/cookie", cookieEndpoint, "GET"));
 
-     // Static file mount
-     g_Server->addStaticDirectory("../static/");
-
-     g_Server->registerStaticIndex("index.html");
-
-     // API endpoint example
-     g_Server->registerEndpoint(new solusek::MEndpoint("/api/cookie", cookieEndpoint, "GET"));
-
-     g_Server->run();
-
-     g_Server->dispose();
-
-     return 0;
+    g_Server->run();
+    g_Server->dispose();
+    return 0;
 }
 ```
 
+The relative static-directory path is resolved from the application's working directory. Adjust it to match your deployment layout.
+
+After starting the example, test the registered endpoint:
+
+```bash
+curl -i http://localhost:8080/api/cookie
+```
+
+The expected response body is `Cookie set!`, with a cookie named `test`.
+
+## Project structure
+
+- `src/` — Library implementation and public headers.
+- `sample-server/` — Example embedded server.
+- `CMakeLists.txt` — Build and installation configuration.
+
 ## Credits
 
-Created by Alessandro Ubriaco
+Created by **Alessandro Ubriaco**.
 
-<https://alessandroubriaco.com/>
-
-<https://solusek.com/>
+- [alessandroubriaco.com](https://alessandroubriaco.com/)
+- [solusek.com](https://solusek.com/)
