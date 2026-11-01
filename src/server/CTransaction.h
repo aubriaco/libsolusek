@@ -20,7 +20,7 @@ namespace solusek
 		CDatabaseTransaction *T;
 		void *H;
 
-		std::vector<MDatabaseHandle*> Handles;
+		std::vector<MDatabaseHandle *> Handles;
 
 		static std::mutex Lock;
 
@@ -46,7 +46,7 @@ namespace solusek
 
 		virtual MDatabaseHandle *select(const char *tableName, std::vector<std::string> find, std::map<std::string, std::string> vars, const std::string &sort = std::string(), const std::string &limit = std::string());
 
-		static void selectCallback(const DBROW& row, void *rs);
+		static void selectCallback(const DBROW &row, void *rs);
 
 		std::string esc(const std::string s);
 	};

@@ -17,7 +17,7 @@ namespace solusek
 
   CSession::~CSession()
   {
-    for(std::vector<CVarVal*>::iterator it = Items.begin(); it != Items.end(); ++it)
+    for (std::vector<CVarVal *>::iterator it = Items.begin(); it != Items.end(); ++it)
     {
       delete (*it);
     }
@@ -26,25 +26,25 @@ namespace solusek
   std::string CSession::getStringValue(const std::string &name)
   {
     CVarVal *vv = get(name);
-    if(vv)
+    if (vv)
       return vv->Val;
     return std::string();
   }
 
   CVarVal *CSession::get(const std::string &name)
   {
-    for(std::vector<CVarVal*>::iterator it = Items.begin(); it != Items.end(); ++it)
+    for (std::vector<CVarVal *>::iterator it = Items.begin(); it != Items.end(); ++it)
     {
-      if((*it)->Var == name)
+      if ((*it)->Var == name)
         return (*it);
     }
     return 0;
   }
 
-  void CSession::setStringValue(const std::string& name, const std::string& value)
+  void CSession::setStringValue(const std::string &name, const std::string &value)
   {
     CVarVal *vv = get(name);
-    if(!vv)
+    if (!vv)
     {
       vv = new CVarVal();
       Items.push_back(vv);

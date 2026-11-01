@@ -8,19 +8,17 @@
 #define __C_THREAD_HANDLER_INCLUDED__
 
 #ifdef __linux__
-#	include <pthread.h>
-	typedef pthread_t THREADID;
-	typedef int THREADHANDLE;
-	typedef void *(*THREADENTRY)(void*);
-#	define THREADFUNC void*
+#include <pthread.h>
+typedef pthread_t THREADID;
+typedef int THREADHANDLE;
+typedef void *(*THREADENTRY)(void *);
+#define THREADFUNC void *
 #endif
-
 
 class CThreadHandler
 {
 public:
-
-	THREADHANDLE create(THREADENTRY func, void* param, THREADID* threadId = 0, bool forker = false, bool joinable = true);
+	THREADHANDLE create(THREADENTRY func, void *param, THREADID *threadId = 0, bool forker = false, bool joinable = true);
 
 	void exitThread(void *r);
 

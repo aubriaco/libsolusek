@@ -16,17 +16,17 @@ namespace solusek
 	{
 	public:
 		MEndpoint() {}
-		MEndpoint(const std::string &path, MResponse(*callback)(const void*, MRequest&), const std::string& method, const std::string& contentType = "text/plain")
+		MEndpoint(const std::string &path, MResponse (*callback)(const void *, MRequest &), const std::string &method, const std::string &contentType = "text/plain")
 		{
 			Path = path;
 			Method = method;
 			Callback = callback;
-            Type = 0;
-            ContentType = contentType;
+			Type = 0;
+			ContentType = contentType;
 		}
-    	int Type;
+		int Type;
 		std::string Path, Method, Contents, Ext, ContentType, Date;
-		MResponse(*Callback)(const void*, MRequest&);
+		MResponse (*Callback)(const void *, MRequest &);
 	};
 }
 

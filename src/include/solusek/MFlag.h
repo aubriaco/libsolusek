@@ -15,7 +15,6 @@ namespace solusek
 	class MFlag
 	{
 	public:
-
 		MFlag() {}
 		MFlag(EFlag flag, const std::string &param)
 		{

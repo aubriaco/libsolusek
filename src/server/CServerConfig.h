@@ -16,7 +16,7 @@ namespace solusek
 		std::string Path;
 
 		int Port;
-	}
+	};
 }
 
 #endif

@@ -18,16 +18,15 @@ namespace solusek
 
         MCookie(bool none = false)
         {
-          None = none;
+            None = none;
         }
 
-        MCookie(const std::string& name, const std::string& value)
+        MCookie(const std::string &name, const std::string &value)
         {
             Name = name;
             Value = value;
             None = false;
         }
-
     };
 
 }

@@ -9,57 +9,57 @@ void interruptCallback(int sig)
 	g_Server->stop();
 }
 
-solusek::MResponse setCookieEndpoint(const void *sobj, solusek::MRequest& data)
+solusek::MResponse setCookieEndpoint(const void *sobj, solusek::MRequest &data)
 {
-    solusek::IServer *server = (solusek::IServer*)sobj;
+	solusek::IServer *server = (solusek::IServer *)sobj;
 
-    solusek::MResponse resp;
-    solusek::MCookie cookie("test", "value");
-    cookie.Path = "/";
-    resp.Cookies.push_back(cookie);
+	solusek::MResponse resp;
+	solusek::MCookie cookie("test", "value");
+	cookie.Path = "/";
+	resp.Cookies.push_back(cookie);
 
-    resp.Body = "Cookie set!";
+	resp.Body = "Cookie set!";
 
-    return resp;
+	return resp;
 }
 
-solusek::MResponse getCookieEndpoint(const void *sobj, solusek::MRequest& data)
+solusek::MResponse getCookieEndpoint(const void *sobj, solusek::MRequest &data)
 {
-	  solusek::IServer *server = (solusek::IServer*)sobj;
+	solusek::IServer *server = (solusek::IServer *)sobj;
 
-		const solusek::MCookie c = data.getCookie("test");
-		solusek::MResponse resp;
-		if(!c.None)
-		{
-			resp.Body = "Cookie content: ";
-			resp.Body += c.Value;
-		}
-	  else
-		{
-			resp.Body = "Cookie not found.";
-		}
+	const solusek::MCookie c = data.getCookie("test");
+	solusek::MResponse resp;
+	if (!c.None)
+	{
+		resp.Body = "Cookie content: ";
+		resp.Body += c.Value;
+	}
+	else
+	{
+		resp.Body = "Cookie not found.";
+	}
 
-		return resp;
+	return resp;
 }
 
-solusek::MResponse setSessionEndpoint(const void *sobj, solusek::MRequest& data)
+solusek::MResponse setSessionEndpoint(const void *sobj, solusek::MRequest &data)
 {
-	solusek::IServer *server = (solusek::IServer*)sobj;
+	solusek::IServer *server = (solusek::IServer *)sobj;
 
-	solusek::ISession* ses = server->startSession();
+	solusek::ISession *ses = server->startSession();
 	ses->setStringValue("var1", "val1");
 	ses->setStringValue("var2", "val2");
 
 	return solusek::MResponse(200, "Session set.", ses->getID());
 }
 
-solusek::MResponse getSessionEndpoint(const void *sobj, solusek::MRequest& data)
+solusek::MResponse getSessionEndpoint(const void *sobj, solusek::MRequest &data)
 {
-	solusek::IServer *server = (solusek::IServer*)sobj;
+	solusek::IServer *server = (solusek::IServer *)sobj;
 
-	solusek::ISession* ses = server->getSession(data.SID);
+	solusek::ISession *ses = server->getSession(data.SID);
 
-	if(ses)
+	if (ses)
 	{
 		std::string body("Session found!\n\n");
 		body += "var1 = " + ses->getStringValue("var1") + "\n";
@@ -70,9 +70,9 @@ solusek::MResponse getSessionEndpoint(const void *sobj, solusek::MRequest& data)
 	return solusek::MResponse(200, "NO session found. Looking for ID: " + data.SID);
 }
 
-solusek::MResponse setCacheEndpoint(const void *sobj, solusek::MRequest& data)
+solusek::MResponse setCacheEndpoint(const void *sobj, solusek::MRequest &data)
 {
-	solusek::IServer *server = (solusek::IServer*)sobj;
+	solusek::IServer *server = (solusek::IServer *)sobj;
 
 	auto cache = solusek::createCache();
 
@@ -83,9 +83,9 @@ solusek::MResponse setCacheEndpoint(const void *sobj, solusek::MRequest& data)
 	return solusek::MResponse(200, "Cache set.");
 }
 
-solusek::MResponse getCacheEndpoint(const void *sobj, solusek::MRequest& data)
+solusek::MResponse getCacheEndpoint(const void *sobj, solusek::MRequest &data)
 {
-	solusek::IServer *server = (solusek::IServer*)sobj;
+	solusek::IServer *server = (solusek::IServer *)sobj;
 
 	auto cache = solusek::createCache();
 
@@ -95,7 +95,6 @@ solusek::MResponse getCacheEndpoint(const void *sobj, solusek::MRequest& data)
 
 	return solusek::MResponse(200, "Cache data found: " + var);
 }
-
 
 int main(int argc, char **argv)
 {
@@ -108,7 +107,7 @@ int main(int argc, char **argv)
 #ifdef USE_MYSQL
 	g_Server->getDatabase()->setConnectionString("mysql://root@localhost");
 	solusek::IDatabaseInstance *db = g_Server->getDatabase()->open();
-	if(db->isConnected())
+	if (db->isConnected())
 		fprintf(stdout, "Connected to database!\n");
 	else
 		fprintf(stderr, "Could not connect to DB.\n");
@@ -138,7 +137,6 @@ int main(int argc, char **argv)
 	g_Server->registerEndpoint(new solusek::MEndpoint("/api/cache/get", getCacheEndpoint, "GET"));
 
 	g_Server->setThreadLimit(50);
-
 
 	g_Server->run();
 

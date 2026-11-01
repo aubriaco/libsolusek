@@ -9,7 +9,7 @@
 #include "CDatabaseHandler.h"
 #include <stdexcept>
 
-CDatabaseResource::CDatabaseResource(void *resource, const std::string& id)
+CDatabaseResource::CDatabaseResource(void *resource, const std::string &id)
 {
 	Resource = resource;
 	ID = id;
@@ -17,8 +17,8 @@ CDatabaseResource::CDatabaseResource(void *resource, const std::string& id)
 
 CDatabaseResource::~CDatabaseResource()
 {
-	if(Resource)
-		mysql_free_result((MYSQL_RES*)Resource);
+	if (Resource)
+		mysql_free_result((MYSQL_RES *)Resource);
 }
 
 CDatabaseTransaction::CDatabaseTransaction(void *obj)
@@ -35,7 +35,8 @@ CDatabaseTransaction::~CDatabaseTransaction()
 
 void CDatabaseTransaction::commit()
 {
-	if (!C) throw std::runtime_error("Not connected.");
+	if (!C)
+		throw std::runtime_error("Not connected.");
 	if (!Completed)
 	{
 		if (mysql_commit(C) != 0)
@@ -55,28 +56,28 @@ CDatabaseHandler::~CDatabaseHandler()
 
 bool CDatabaseHandler::open()
 {
-	if(ConnectionString.size() < 8 || ConnectionString.substr(0, 8) != "mysql://")
+	if (ConnectionString.size() < 8 || ConnectionString.substr(0, 8) != "mysql://")
 		return false;
 	size_t n = ConnectionString.find("://");
-	if(n == std::string::npos)
+	if (n == std::string::npos)
 		return false;
-  	std::string cs(ConnectionString.substr(n+3));
+	std::string cs(ConnectionString.substr(n + 3));
 	n = cs.find("/");
-	if(n == std::string::npos)
+	if (n == std::string::npos)
 		return false;
 	std::string p1(cs.substr(0, n));
-	std::string dbname(cs.substr(n+1));
+	std::string dbname(cs.substr(n + 1));
 	std::string username, password, host;
-  	n = p1.find("@");
-	if(n != std::string::npos)
+	n = p1.find("@");
+	if (n != std::string::npos)
 	{
 		std::string p2(p1.substr(0, n));
-		host = p1.substr(n+1);
+		host = p1.substr(n + 1);
 		n = p2.find(":");
-		if(n != std::string::npos)
+		if (n != std::string::npos)
 		{
 			username = p2.substr(0, n);
-			password = p2.substr(n+1);
+			password = p2.substr(n + 1);
 		}
 		else
 			username = p2;
@@ -85,14 +86,14 @@ bool CDatabaseHandler::open()
 		host = p1;
 
 	C = mysql_init(0);
-	if(!C)
+	if (!C)
 		return false;
 
-  	if(!mysql_real_connect(C, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
+	if (!mysql_real_connect(C, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
 	{
 		enum mysql_protocol_type prot_type = MYSQL_PROTOCOL_TCP;
 		mysql_options(C, MYSQL_OPT_PROTOCOL, (void *)&prot_type);
-		if(!mysql_real_connect(C, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
+		if (!mysql_real_connect(C, host.c_str(), username.c_str(), password.c_str(), NULL, 0, NULL, 0))
 		{
 			mysql_close(C);
 			C = 0;
@@ -100,7 +101,7 @@ bool CDatabaseHandler::open()
 		}
 	}
 
-	if(mysql_select_db(C, dbname.c_str()) != 0)
+	if (mysql_select_db(C, dbname.c_str()) != 0)
 	{
 		mysql_close(C);
 		C = 0;
@@ -112,14 +113,15 @@ bool CDatabaseHandler::open()
 
 void CDatabaseHandler::close()
 {
-	if(C)
+	if (C)
 		mysql_close(C);
 	C = 0;
 }
 
 CDatabaseTransaction *CDatabaseHandler::begin()
 {
-	if (!C) throw std::runtime_error("Not connected.");
+	if (!C)
+		throw std::runtime_error("Not connected.");
 	if (mysql_query(C, "START TRANSACTION") != 0)
 		throw std::runtime_error(mysql_error(C));
 	return new CDatabaseTransaction(C);
@@ -127,7 +129,7 @@ CDatabaseTransaction *CDatabaseHandler::begin()
 
 int CDatabaseTransaction::exec(const std::string &s)
 {
-	if(!C)
+	if (!C)
 		throw std::runtime_error("Not connected.");
 	return mysql_real_query(C, s.c_str(), s.size());
 }
@@ -135,10 +137,10 @@ int CDatabaseTransaction::exec(const std::string &s)
 CDatabaseResource *CDatabaseTransaction::insert(const std::string &s, const std::string &idField)
 {
 	(void)idField;
-	if(!C)
+	if (!C)
 		throw std::runtime_error("Not connected.");
 
-	if(mysql_real_query(C, s.c_str(), static_cast<unsigned long>(s.size())) != 0)
+	if (mysql_real_query(C, s.c_str(), static_cast<unsigned long>(s.size())) != 0)
 	{
 		fprintf(stderr, "QUERY ERROR: %s\n", mysql_error(C));
 		return new CDatabaseResource(mysql_error(C));
@@ -156,35 +158,34 @@ CDatabaseResource *CDatabaseTransaction::insert(const std::string &s, const std:
 	return new CDatabaseResource(res, buf);
 }
 
-
-bool CDatabaseTransaction::query(const std::string &s, void(*callback)(const DBROW &, void *), void *param)
+bool CDatabaseTransaction::query(const std::string &s, void (*callback)(const DBROW &, void *), void *param)
 {
-	if(!C)
+	if (!C)
 		throw std::runtime_error("Not connected.");
-	if(mysql_real_query(C, s.c_str(), s.size()) == 0)
- 	{
+	if (mysql_real_query(C, s.c_str(), s.size()) == 0)
+	{
 		MYSQL_RES *res = mysql_store_result(C);
-		if(res)
+		if (res)
 		{
 			MYSQL_ROW row;
 			unsigned int lengths = mysql_num_fields(res);
-			while(row = mysql_fetch_row(res))
+			while (row = mysql_fetch_row(res))
 			{
 				DBROW result;
-				for(int n = 0; n < lengths; n++)
+				for (int n = 0; n < lengths; n++)
 				{
-					if(row[n])
+					if (row[n])
 						result.push_back(row[n]);
 					else
 						result.push_back("");
 				}
-				if(callback)
+				if (callback)
 					callback(result, param);
 			}
 			mysql_free_result(res);
 		}
 		return true;
- 	}
+	}
 	else
 		fprintf(stderr, "QUERY ERROR: %s\n", s.c_str());
 	return false;
@@ -192,21 +193,21 @@ bool CDatabaseTransaction::query(const std::string &s, void(*callback)(const DBR
 
 CDatabaseResource *CDatabaseTransaction::queryOne(const std::string &s)
 {
-	if(!C)
+	if (!C)
 		throw std::runtime_error("Not connected.");
-	if(mysql_real_query(C, s.c_str(), s.size()) == 0)
+	if (mysql_real_query(C, s.c_str(), s.size()) == 0)
 	{
 		MYSQL_RES *res = mysql_store_result(C);
-		if(res)
+		if (res)
 		{
 			MYSQL_ROW row = mysql_fetch_row(res);
-			if(row)
+			if (row)
 			{
 				DBROW rr;
 				unsigned int lengths = mysql_num_fields(res);
-				for(int n = 0; n < lengths; n++)
+				for (int n = 0; n < lengths; n++)
 				{
-					if(row[n])
+					if (row[n])
 						rr.push_back(row[n]);
 					else
 						rr.push_back("");
@@ -228,23 +229,23 @@ CDatabaseResource *CDatabaseTransaction::queryOne(const std::string &s)
 
 std::string CDatabaseTransaction::esc(const std::string s)
 {
-	if(!C)
+	if (!C)
 		throw std::runtime_error("Not connected.");
-	char *buf = new char[(s.size()*2)+1];
+	char *buf = new char[(s.size() * 2) + 1];
 	mysql_real_escape_string(C, buf, s.c_str(), s.size());
-    std::string r(buf);
+	std::string r(buf);
 	delete[] buf;
 	return r;
 }
 
 std::string CDatabaseHandler::esc(CDatabaseTransaction *t, const std::string s)
 {
-	if(!C)
+	if (!C)
 		throw std::runtime_error("Not connected.");
-	if(!t)
+	if (!t)
 		throw std::runtime_error("Transaction not allocated.");
 
-	char *buf = new char[(s.size()*2)+1];
+	char *buf = new char[(s.size() * 2) + 1];
 	mysql_real_escape_string(C, buf, s.c_str(), s.size());
 	std::string r(buf);
 	delete[] buf;

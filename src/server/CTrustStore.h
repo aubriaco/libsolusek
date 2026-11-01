@@ -21,7 +21,8 @@ class CTrustStore
 {
 private:
 	std::vector<CTrustCert> List;
-	CTrustCert* Current = 0;
+	CTrustCert *Current = 0;
+
 public:
 	CTrustStore()
 	{
@@ -30,12 +31,12 @@ public:
 	{
 	}
 
-	const CTrustCert* getCurrent()
+	const CTrustCert *getCurrent()
 	{
 		return Current;
 	}
 
-	void addKey(const std::string& hex)
+	void addKey(const std::string &hex)
 	{
 		CTrustCert cert;
 		cert.ID = 0;
@@ -44,16 +45,16 @@ public:
 		List.push_back(cert);
 	}
 
-	void addKeyEx(const CTrustCert& cert)
+	void addKeyEx(const CTrustCert &cert)
 	{
 		List.push_back(cert);
 	}
 
-	bool validate(const std::string& hex)
+	bool validate(const std::string &hex)
 	{
-		for(unsigned int n = 0; n < List.size(); n++)
+		for (unsigned int n = 0; n < List.size(); n++)
 		{
-			if(List[n].PublicKeyHex == hex)
+			if (List[n].PublicKeyHex == hex)
 			{
 				Current = &List[n];
 				return true;
@@ -61,7 +62,6 @@ public:
 		}
 		return false;
 	}
-
 };
 
 #endif // CTRUSTSTORE_H

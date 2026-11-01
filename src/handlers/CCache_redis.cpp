@@ -16,7 +16,7 @@ namespace solusek
 
     CCache::~CCache()
     {
-        redisFree((redisContext*)Context);
+        redisFree((redisContext *)Context);
     }
 
     void CCache::dispose()
@@ -24,17 +24,17 @@ namespace solusek
         delete this;
     }
 
-    void CCache::set(const std::string& var, const std::string& val)
+    void CCache::set(const std::string &var, const std::string &val)
     {
-        redisReply* reply = (redisReply*)redisCommand((redisContext*)Context, "SET %s %s", var.c_str(), val.c_str());
-        if(reply)
+        redisReply *reply = (redisReply *)redisCommand((redisContext *)Context, "SET %s %s", var.c_str(), val.c_str());
+        if (reply)
             freeReplyObject(reply);
     }
 
-    std::string CCache::get(const std::string& var)
+    std::string CCache::get(const std::string &var)
     {
-        redisReply* reply = (redisReply*)redisCommand((redisContext*)Context, "GET %s", var.c_str());
-        if(reply)
+        redisReply *reply = (redisReply *)redisCommand((redisContext *)Context, "GET %s", var.c_str());
+        if (reply)
         {
             std::string ret(reply->str);
             freeReplyObject(reply);

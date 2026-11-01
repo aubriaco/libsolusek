@@ -47,7 +47,7 @@ namespace solusek
 		Verbose = b;
 	}
 
-	void CClient::setMethod(const std::string& s)
+	void CClient::setMethod(const std::string &s)
 	{
 		Method = s;
 	}
@@ -62,53 +62,53 @@ namespace solusek
 		Endpoint = s;
 	}
 
-	void CClient::setHeader(const std::string& name, const std::string& val)
+	void CClient::setHeader(const std::string &name, const std::string &val)
 	{
 		AdditionalHeaders[name] = val;
 	}
 
-	void CClient::removeHeader(const std::string& name)
+	void CClient::removeHeader(const std::string &name)
 	{
 		AdditionalHeaders.erase(name);
 	}
 
-	void CClient::setSSLCertificate(const std::string& fn)
+	void CClient::setSSLCertificate(const std::string &fn)
 	{
 		CertFileName = fn;
 	}
 
-	void CClient::setSSLKeyFile(const std::string& fn, const std::string& password)
+	void CClient::setSSLKeyFile(const std::string &fn, const std::string &password)
 	{
 		KeyFileName = fn;
 		KeyPassword = password;
 	}
 
-	void CClient::setSSLCertificateMem(void* fn)
+	void CClient::setSSLCertificateMem(void *fn)
 	{
 #ifdef USE_OPENSSL
-		if(CertMem)
-			X509_free((X509*)CertMem);
+		if (CertMem)
+			X509_free((X509 *)CertMem);
 #endif
 		CertMem = fn;
 	}
 
-	void CClient::setSSLKeyFileMem(void* fn, const std::string& password)
+	void CClient::setSSLKeyFileMem(void *fn, const std::string &password)
 	{
 #ifdef USE_OPENSSL
-		if(KeyMem)
-			EVP_PKEY_free((EVP_PKEY*)KeyMem);
+		if (KeyMem)
+			EVP_PKEY_free((EVP_PKEY *)KeyMem);
 #endif
 		KeyMem = fn;
 		KeyPassword = password;
 	}
 
-	void CClient::setSSLPKCS12(const std::string& fn, const std::string& password)
+	void CClient::setSSLPKCS12(const std::string &fn, const std::string &password)
 	{
 		PKCS12FileName = fn;
 		PKCS12Password = password;
 	}
 
-	MResponse CClient::runRequest(const std::string& body, bool ignoreResult)
+	MResponse CClient::runRequest(const std::string &body, bool ignoreResult)
 	{
 		std::string contentType("application/json"), location;
 		std::map<std::string, std::string> headers;
@@ -116,15 +116,15 @@ namespace solusek
 
 		std::size_t n1 = Endpoint.find("://");
 
-		if(n1 == std::string::npos)
+		if (n1 == std::string::npos)
 		{
-			fprintf(stdout,"Invalid endpoint.\n");
+			fprintf(stdout, "Invalid endpoint.\n");
 			return MResponse();
 		}
 
 		std::string protocol = Endpoint.substr(0, n1);
 
-		if(protocol == "https")
+		if (protocol == "https")
 		{
 			port = 443;
 			UseSSL = true;
@@ -134,27 +134,24 @@ namespace solusek
 
 		std::size_t nt = host.find("/");
 		n1 = host.find("@");
-		if(n1 != std::string::npos && n1 < nt)
+		if (n1 != std::string::npos && n1 < nt)
 		{
 			std::string auth = host.substr(0, n1);
 			host = host.substr(n1 + 1);
-			//setHeader("Authorization", "Basic " + base64encode((unsigned char*)auth.c_str(), auth.size()));
-			if(Verbose)
-				fprintf(stdout,"Using authorization header.\n");
+			// setHeader("Authorization", "Basic " + base64encode((unsigned char*)auth.c_str(), auth.size()));
+			if (Verbose)
+				fprintf(stdout, "Using authorization header.\n");
 		}
-
-
-
 
 		std::string path("/");
 
 		std::size_t n2 = host.find(":");
-		if(n2 != std::string::npos)
+		if (n2 != std::string::npos)
 		{
 			std::string sport = host.substr(n2 + 1);
 			host = host.substr(0, n2);
 			std::size_t n3 = sport.find('/');
-			if(n3 != std::string::npos)
+			if (n3 != std::string::npos)
 			{
 				path = sport.substr(n3);
 				sport = sport.substr(0, n3);
@@ -164,51 +161,50 @@ namespace solusek
 		else
 		{
 			n2 = host.find("/");
-			if(n2 != std::string::npos)
+			if (n2 != std::string::npos)
 			{
 				path = host.substr(n2);
 				host = host.substr(0, n2);
 			}
 		}
 
-		if(UseSSL && Verbose)
-			fprintf(stdout,"Using SSL\n");
+		if (UseSSL && Verbose)
+			fprintf(stdout, "Using SSL\n");
 
-		if(Verbose)
-			fprintf(stdout,"HOST: %s\nPORT: %i\nPATH: %s\n", host.c_str(), port, path.c_str());
+		if (Verbose)
+			fprintf(stdout, "HOST: %s\nPORT: %i\nPATH: %s\n", host.c_str(), port, path.c_str());
 
 		MainSocket = NH.createSocket(UseSSL);
 		MainSocket->setThrowExceptions(true);
 
-		if(CertFileName.size() > 0)
+		if (CertFileName.size() > 0)
 		{
 			MainSocket->setSSLCertificate(CertFileName.c_str());
 		}
 
-		if(KeyFileName.size() > 0)
+		if (KeyFileName.size() > 0)
 		{
 			MainSocket->setSSLPrivateKeyFile(KeyFileName.c_str());
 			MainSocket->setSSLCertificatePassword(KeyPassword.c_str());
 		}
 
-
-		if(PKCS12FileName.size() > 0)
+		if (PKCS12FileName.size() > 0)
 		{
-			FILE* file = fopen(PKCS12FileName.c_str(), "rb");
+			FILE *file = fopen(PKCS12FileName.c_str(), "rb");
 
-			if(file)
+			if (file)
 			{
 #ifdef USE_OPENSSL
-				PKCS12* pf;
+				PKCS12 *pf;
 				pf = d2i_PKCS12_fp(file, 0);
 
-				EVP_PKEY* pkey = 0;
-				X509* cert = 0;
+				EVP_PKEY *pkey = 0;
+				X509 *cert = 0;
 				STACK_OF(X509) *ca = 0;
 
 				int r = PKCS12_parse(pf, PKCS12Password.c_str(), &pkey, &cert, &ca);
 
-				if(r == 1)
+				if (r == 1)
 				{
 					MainSocket->setSSLCertificateMem(cert);
 					MainSocket->setSSLPrivateKeyFileMem(pkey);
@@ -218,12 +214,12 @@ namespace solusek
 			}
 		}
 
-		if(CertMem)
+		if (CertMem)
 			MainSocket->setSSLCertificateMem(CertMem);
-		if(KeyMem)
+		if (KeyMem)
 			MainSocket->setSSLPrivateKeyFileMem(KeyMem);
 
-		if(UseSSL)
+		if (UseSSL)
 		{
 			MainSocket->mutexSSL();
 			MainSocket->setSSLMutual(true);
@@ -237,8 +233,8 @@ namespace solusek
 			MainSocket->setTimeout(Timeout);
 			MainSocket->connect(host.c_str(), port);
 
-			if(Verbose)
-				fprintf(stdout,"Connected!\n");
+			if (Verbose)
+				fprintf(stdout, "Connected!\n");
 
 			std::string data(Method);
 			data += " ";
@@ -248,15 +244,15 @@ namespace solusek
 			data += "Host: ";
 			data += host;
 			data += "\r\n";
-			for(std::map<std::string, std::string>::iterator it = AdditionalHeaders.begin(); it != AdditionalHeaders.end(); ++it)
+			for (std::map<std::string, std::string>::iterator it = AdditionalHeaders.begin(); it != AdditionalHeaders.end(); ++it)
 			{
 				data += (*it).first;
 				data += ": ";
 				data += (*it).second;
 				data += "\r\n";
 			}
-			//data += "Content-type: application/json\r\n";
-			if(body.size() > 0)
+			// data += "Content-type: application/json\r\n";
+			if (body.size() > 0)
 			{
 				data += "Content-length: ";
 				char buf[16];
@@ -266,50 +262,48 @@ namespace solusek
 			}
 			data += "\r\n";
 
-			if(Verbose)
+			if (Verbose)
 			{
-				fprintf(stdout,"Body size: %lu\n", body.size());
-				fprintf(stdout,"HEADERS:\n%s\n", data.c_str());
+				fprintf(stdout, "Body size: %lu\n", body.size());
+				fprintf(stdout, "HEADERS:\n%s\n", data.c_str());
 			}
 
 			MainSocket->writeBuffer(data.c_str(), data.size());
 
 			int chunk = 1024;
 			unsigned long int done = 0;
-			while(done < body.size())
+			while (done < body.size())
 			{
-				if(done + chunk > body.size())
+				if (done + chunk > body.size())
 					chunk = body.size() - done;
 				MainSocket->writeBuffer(&body[0] + done, chunk);
 				done += chunk;
-				if(Verbose)
-					fprintf(stdout,"%lu/%lu\n", done, body.size());
+				if (Verbose)
+					fprintf(stdout, "%lu/%lu\n", done, body.size());
 			}
 
+			if (Verbose)
+				fprintf(stdout, "Sent request!\n");
 
-			if(Verbose)
-				fprintf(stdout,"Sent request!\n");
-
-			if(!ignoreResult)
+			if (!ignoreResult)
 			{
 				char retBuf[2];
 				int ex = 0;
 				std::string line;
-				while(true)
+				while (true)
 				{
 
 					MainSocket->readBuffer(retBuf, 1);
 					retBuf[1] = 0;
 
-
-					if(retBuf[0] == '\r')
+					if (retBuf[0] == '\r')
 						continue;
-					if(retBuf[0] == '\n')
+					if (retBuf[0] == '\n')
 					{
-						if(line.find("HTTP/1.1") != std::string::npos)
+						if (line.find("HTTP/1.1") != std::string::npos)
 						{
 							int i1 = line.find(" ");
-							std::string scode = line.substr(i1+1);
+							std::string scode = line.substr(i1 + 1);
 							int i2 = scode.find(" ");
 							scode = scode.substr(0, i2);
 							code = atoi(scode.c_str());
@@ -320,17 +314,17 @@ namespace solusek
 							std::string var, val;
 							int i1 = line.find(":");
 							var = strtolower(line.substr(0, i1));
-							val = line.substr(i1+1);
+							val = line.substr(i1 + 1);
 
 							trim(var);
 							trim(val);
 							headers[var] = val;
 						}
-						if(Verbose)
-							fprintf(stdout,"LINE: %s\n", line.c_str());
+						if (Verbose)
+							fprintf(stdout, "LINE: %s\n", line.c_str());
 						line = "";
 						ex++;
-						if(ex == 2)
+						if (ex == 2)
 							break;
 					}
 					else
@@ -338,36 +332,34 @@ namespace solusek
 						line += retBuf;
 						ex = 0;
 					}
-
 				}
 
-				if(Verbose)
+				if (Verbose)
 					fprintf(stdout, "Read header!\n");
 
-				if(headers["content-type"].size() > 0)
+				if (headers["content-type"].size() > 0)
 				{
 					contentType = headers["content-type"];
-					if(Verbose)
+					if (Verbose)
 						fprintf(stdout, "Content type: %s\n", contentType.c_str());
 				}
 
-				if(headers["content-length"].size() > 0)
+				if (headers["content-length"].size() > 0)
 				{
 					int clen = atoi(headers["content-length"].c_str());
-					if(Verbose)
+					if (Verbose)
 						fprintf(stdout, "Content length: %i\n", clen);
 					int r = 0;
-					for(unsigned int n = 0; n < clen; n++)
+					for (unsigned int n = 0; n < clen; n++)
 					{
 						r = MainSocket->readBuffer(retBuf, 1);
 						retBuf[r] = 0;
-						//resp += retBuf;
-						if(r > 0)
+						// resp += retBuf;
+						if (r > 0)
 							resp.insert(resp.end(), retBuf[0]);
 					}
-
 				}
-				else if(headers["transfer-encoding"].size() > 0)
+				else if (headers["transfer-encoding"].size() > 0)
 				{
 					std::string acc;
 					unsigned int chunkSize;
@@ -376,72 +368,70 @@ namespace solusek
 					try
 					{
 						memset(bbuf, 0, 2);
-						while(true)
+						while (true)
 						{
 							char prev = 0;
 							acc = std::string();
-							while(true)
+							while (true)
 							{
 								r = MainSocket->readBuffer(bbuf, 1);
-								if(r < 1)
+								if (r < 1)
 									throw -1;
 								bbuf[r] = 0;
-								if(prev == '\r' && bbuf[0] == '\n')
+								if (prev == '\r' && bbuf[0] == '\n')
 									break;
-								if(bbuf[0] != '\r')
+								if (bbuf[0] != '\r')
 									acc.insert(acc.end(), bbuf[0]);
 								prev = bbuf[0];
 							}
 
-							if(Verbose)
-								fprintf(stdout,"CHUNK HEX: %s\n", acc.c_str());
+							if (Verbose)
+								fprintf(stdout, "CHUNK HEX: %s\n", acc.c_str());
 
 							sscanf(acc.c_str(), "%x", &chunkSize);
 
-							if(Verbose)
-								fprintf(stdout,"CHUNK SIZE: %u\n", chunkSize);
+							if (Verbose)
+								fprintf(stdout, "CHUNK SIZE: %u\n", chunkSize);
 
-							if(chunkSize == 0)
+							if (chunkSize == 0)
 								throw -1;
 
 							char cbuf[1];
 							memset(cbuf, 0, 1);
-							for(unsigned int n = 0; n < chunkSize; n++)
+							for (unsigned int n = 0; n < chunkSize; n++)
 							{
 								r = MainSocket->readBuffer(cbuf, 1);
-								if(r > 0)
+								if (r > 0)
 									resp.insert(resp.end(), cbuf[0]);
 							}
-							if(Verbose)
-								fprintf(stdout,"ACCUM: %s\n", &resp[1]);
+							if (Verbose)
+								fprintf(stdout, "ACCUM: %s\n", &resp[1]);
 							MainSocket->readBuffer(bbuf, 2);
-							if(Verbose)
-								fprintf(stdout,"RECV: %lu\n", resp.size());
+							if (Verbose)
+								fprintf(stdout, "RECV: %lu\n", resp.size());
 						}
 					}
-					catch(int ii)
+					catch (int ii)
 					{
-						if(Verbose)
-							fprintf(stdout,"DONE\n");
+						if (Verbose)
+							fprintf(stdout, "DONE\n");
 					}
-					if(Verbose)
-						fprintf(stdout,"RESP: %s\n", resp.c_str());
+					if (Verbose)
+						fprintf(stdout, "RESP: %s\n", resp.c_str());
 					MainSocket->setTimeout(Timeout);
 				}
-				if(Verbose)
-					fprintf(stdout,"%s\n", resp.c_str());
+				if (Verbose)
+					fprintf(stdout, "%s\n", resp.c_str());
 
-				if(headers["location"].size() > 0)
+				if (headers["location"].size() > 0)
 				{
 					location = headers["location"];
 				}
-
 			}
-
 		}
-		catch(int i)
+		catch (int i)
 		{
-			fprintf(stdout,"Socket error: %i\n", i);
+			fprintf(stdout, "Socket error: %i\n", i);
 		}
 
 		delete MainSocket;

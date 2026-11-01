@@ -12,22 +12,22 @@
 
 namespace solusek
 {
-    IServer* createServer()
+    IServer *createServer()
     {
         return new CServer();
     }
 
-    IClient* createClient()
+    IClient *createClient()
     {
         return new CClient();
     }
 
-    INetHandlerSocket* createNetHandlerSocket()
+    INetHandlerSocket *createNetHandlerSocket()
     {
         return new CNetHandlerSocket();
     }
 
-    ICache* createCache()
+    ICache *createCache()
     {
         return new CCache();
     }

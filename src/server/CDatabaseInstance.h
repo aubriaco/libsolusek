@@ -24,13 +24,18 @@ namespace solusek
 		std::atomic<bool> Used;
 		std::string ConnectionString;
 		time_t T;
+
 	public:
 		CDatabaseInstance(void *d, const std::string &connectionString);
 		~CDatabaseInstance();
 
 		size_t getID() { return ID; }
 		bool inUse() { return Used.load(std::memory_order_acquire); }
-		void putInUse() { T = time(0); Used.store(true, std::memory_order_release); }
+		void putInUse()
+		{
+			T = time(0);
+			Used.store(true, std::memory_order_release);
+		}
 		std::string getConnectionString() { return ConnectionString; }
 		time_t getT() { return T; }
 

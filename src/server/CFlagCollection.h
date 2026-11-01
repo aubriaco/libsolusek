@@ -15,14 +15,15 @@ namespace solusek
 	{
 	private:
 		std::vector<MFlag> List;
+
 	public:
 		CFlagCollection() {}
 
 		virtual MFlag *get(EFlag flagId)
 		{
-			for(unsigned int n = 0; n < List.size(); n++)
+			for (unsigned int n = 0; n < List.size(); n++)
 			{
-				if(List[n].Flag == flagId)
+				if (List[n].Flag == flagId)
 					return &List[n];
 			}
 			return 0;

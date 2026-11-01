@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-
 namespace solusek
 {
 	class MDatabaseHandle
@@ -17,9 +16,9 @@ namespace solusek
 	public:
 		virtual std::string getID() = 0;
 
-		virtual void setID(const std::string& id) = 0;
+		virtual void setID(const std::string &id) = 0;
 
-		virtual std::vector< std::vector<std::string> > getData() = 0;
+		virtual std::vector<std::vector<std::string>> getData() = 0;
 
 		virtual unsigned int size() = 0;
 

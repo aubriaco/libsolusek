@@ -8,7 +8,7 @@
 #pragma message "Using PQXX"
 #include "CDatabaseHandler.h"
 
-CDatabaseResource::CDatabaseResource(void *resource, const std::string& id)
+CDatabaseResource::CDatabaseResource(void *resource, const std::string &id)
 {
 	Resource = resource;
 	ID = id;
@@ -20,7 +20,7 @@ CDatabaseResource::~CDatabaseResource()
 
 CDatabaseTransaction::CDatabaseTransaction(void *obj)
 {
-	W = (pqxx::work*)obj;
+	W = (pqxx::work *)obj;
 }
 
 CDatabaseTransaction::~CDatabaseTransaction()
@@ -49,7 +49,7 @@ bool CDatabaseHandler::open()
 	{
 		C = new pqxx::connection(ConnectionString.c_str());
 	}
-	catch(const std::exception &e)
+	catch (const std::exception &e)
 	{
 		return false;
 	}
@@ -74,7 +74,7 @@ int CDatabaseTransaction::exec(const std::string &s)
 	{
 		pqxx::result rs = W->exec(s);
 	}
-	catch(const std::exception &e)
+	catch (const std::exception &e)
 	{
 		return -1;
 	}
@@ -89,38 +89,36 @@ CDatabaseResource *CDatabaseTransaction::insert(const std::string &s, const std:
 	{
 		pqxx::result rs = w->exec(s + " RETURNING " + idField);
 		std::string id = rs[0][0].as<std::string>();
-		//w->commit();
-		//delete w;
+		// w->commit();
+		// delete w;
 		CDatabaseResource *r = new CDatabaseResource(w, id);
 		return r;
 	}
-	catch(const std::exception &e)
+	catch (const std::exception &e)
 	{
 		return new CDatabaseResource(e.what());
 	}
 }
 
-
-
-bool CDatabaseTransaction::query(const std::string &s, void(*callback)(const DBROW &, void *), void *param)
+bool CDatabaseTransaction::query(const std::string &s, void (*callback)(const DBROW &, void *), void *param)
 {
 	try
 	{
 		pqxx::result rs = W->exec(s);
 
-		for(auto row: rs)
+		for (auto row : rs)
 		{
 			DBROW result;
-			for(int n = 0; n < row.size(); n++)
+			for (int n = 0; n < row.size(); n++)
 			{
 				result.push_back(row[n].c_str());
 			}
-			if(callback)
+			if (callback)
 				callback(result, param);
 		}
 		return true;
 	}
-	catch(const std::exception &e)
+	catch (const std::exception &e)
 	{
 		return false;
 	}
@@ -132,21 +130,21 @@ CDatabaseResource *CDatabaseTransaction::queryOne(const std::string &s)
 	{
 		pqxx::result rs = W->exec(s);
 
-		for(auto row: rs)
+		for (auto row : rs)
 		{
 			DBROW result;
-			for(int n = 0; n < row.size(); n++)
+			for (int n = 0; n < row.size(); n++)
 			{
 				result.push_back(row[n].c_str());
 			}
-			std::vector< std::vector<std::string> > data;
+			std::vector<std::vector<std::string>> data;
 			data.push_back(result);
 			CDatabaseResource *r = new CDatabaseResource(0, result[0]);
 			r->setData(data);
 			return r;
 		}
 	}
-	catch(const std::exception &e)
+	catch (const std::exception &e)
 	{
 		return new CDatabaseResource(e.what());
 	}
@@ -160,7 +158,7 @@ std::string CDatabaseTransaction::esc(const std::string s)
 
 std::string CDatabaseHandler::esc(CDatabaseTransaction *t, const std::string s)
 {
-	//return pqxx::escape_binary(s);
+	// return pqxx::escape_binary(s);
 	return t->esc(s);
 }
 

@@ -12,7 +12,7 @@ namespace solusek
 	class IConfig
 	{
 	public:
-		virtual std::string get(const std::string& path) = 0;
+		virtual std::string get(const std::string &path) = 0;
 	};
 }
 

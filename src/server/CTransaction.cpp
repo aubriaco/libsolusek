@@ -14,7 +14,6 @@ namespace solusek
 {
 	std::mutex CTransaction::Lock;
 
-
 	CTransaction::~CTransaction()
 	{
 		cleanup();
@@ -31,11 +30,11 @@ namespace solusek
 	MDatabaseHandle *CTransaction::insert(const char *tableName, std::map<std::string, std::string> vars)
 	{
 		std::string acc(""), vals("");
-		for(std::map<std::string,std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
+		for (std::map<std::string, std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
 		{
-			if(acc.size() > 0)
+			if (acc.size() > 0)
 				acc += ",";
-			if(vals.size() > 0)
+			if (vals.size() > 0)
 				vals += ",";
 			acc += it->first;
 			vals += "'";
@@ -60,18 +59,18 @@ namespace solusek
 	bool CTransaction::update(const char *tableName, std::map<std::string, std::string> find, std::map<std::string, std::string> vars)
 	{
 		std::string acc(""), vals("");
-		for(std::map<std::string,std::string>::iterator it = find.begin(); it != find.end(); ++it)
+		for (std::map<std::string, std::string>::iterator it = find.begin(); it != find.end(); ++it)
 		{
-			if(acc.size() > 0)
+			if (acc.size() > 0)
 				acc += " AND ";
 			acc += it->first;
 			acc += "='";
 			acc += esc(it->second);
 			acc += "'";
 		}
-		for(std::map<std::string,std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
+		for (std::map<std::string, std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
 		{
-			if(vals.size() > 0)
+			if (vals.size() > 0)
 				vals += ",";
 			vals += it->first;
 			vals += "='";
@@ -87,22 +86,22 @@ namespace solusek
 		builder += acc;
 
 		std::lock_guard<std::mutex> guard(Lock);
-		bool r = T->query(builder,0);
+		bool r = T->query(builder, 0);
 		return r;
 	}
 
 	MDatabaseHandle *CTransaction::selectOne(const char *tableName, std::vector<std::string> find, std::map<std::string, std::string> vars, const std::string &sort)
 	{
 		std::string acc(""), q("");
-		for(std::vector<std::string>::iterator it = find.begin(); it != find.end(); ++it)
+		for (std::vector<std::string>::iterator it = find.begin(); it != find.end(); ++it)
 		{
-			if(q.size() > 0)
+			if (q.size() > 0)
 				q += ",";
 			q += (*it);
 		}
-		for(std::map<std::string,std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
+		for (std::map<std::string, std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
 		{
-			if(acc.size() > 0)
+			if (acc.size() > 0)
 				acc += " AND ";
 			acc += it->first;
 			acc += "='";
@@ -112,12 +111,12 @@ namespace solusek
 
 		std::string builder("SELECT " + q + " FROM ");
 		builder += tableName;
-		if(vars.size() > 0)
+		if (vars.size() > 0)
 		{
 			builder += " WHERE ";
 			builder += acc;
 		}
-		if(sort.size() > 0)
+		if (sort.size() > 0)
 		{
 			builder += " ORDER BY ";
 			builder += sort;
@@ -132,7 +131,7 @@ namespace solusek
 
 	MDatabaseHandle *CTransaction::selectCustom(const std::string &query)
 	{
-		CDatabaseResource* rs = new CDatabaseResource(0, "");
+		CDatabaseResource *rs = new CDatabaseResource(0, "");
 
 		std::lock_guard<std::mutex> guard(Lock);
 		T->query(query, selectCallback, rs);
@@ -145,15 +144,15 @@ namespace solusek
 	MDatabaseHandle *CTransaction::select(const char *tableName, std::vector<std::string> find, std::map<std::string, std::string> vars, const std::string &sort, const std::string &limit)
 	{
 		std::string acc(""), q("");
-		for(std::vector<std::string>::iterator it = find.begin(); it != find.end(); ++it)
+		for (std::vector<std::string>::iterator it = find.begin(); it != find.end(); ++it)
 		{
-			if(q.size() > 0)
+			if (q.size() > 0)
 				q += ",";
 			q += (*it);
 		}
-		for(std::map<std::string,std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
+		for (std::map<std::string, std::string>::iterator it = vars.begin(); it != vars.end(); ++it)
 		{
-			if(acc.size() > 0)
+			if (acc.size() > 0)
 				acc += " AND ";
 			acc += it->first;
 			acc += "='";
@@ -163,24 +162,23 @@ namespace solusek
 
 		std::string builder("SELECT " + q + " FROM ");
 		builder += tableName;
-		if(vars.size() > 0)
+		if (vars.size() > 0)
 		{
 			builder += " WHERE ";
 			builder += acc;
 		}
-		if(sort.size() > 0)
+		if (sort.size() > 0)
 		{
 			builder += " ORDER BY ";
 			builder += sort;
 		}
-		if(limit.size() > 0)
+		if (limit.size() > 0)
 		{
 			builder += " LIMIT ";
 			builder += limit;
 		}
 
-
-		CDatabaseResource* rs = new CDatabaseResource(0, "");
+		CDatabaseResource *rs = new CDatabaseResource(0, "");
 		std::lock_guard<std::mutex> guard(Lock);
 		T->query(builder, selectCallback, rs);
 		MDatabaseHandle *r = new CDatabaseHandle(rs);
@@ -190,9 +188,9 @@ namespace solusek
 
 	void CTransaction::selectCallback(const DBROW &row, void *rs)
 	{
-		CDatabaseResource *res = (CDatabaseResource*)rs;
+		CDatabaseResource *res = (CDatabaseResource *)rs;
 		std::vector<std::string> r;
-		for(unsigned int n = 0; n < row.size(); n++)
+		for (unsigned int n = 0; n < row.size(); n++)
 		{
 			r.push_back(row[n]);
 		}
@@ -206,16 +204,16 @@ namespace solusek
 
 	void CTransaction::commit()
 	{
-		//T->commit();
+		// T->commit();
 		std::lock_guard<std::mutex> guard(Lock);
 		T->exec("commit;");
 	}
 
 	void CTransaction::cleanup()
 	{
-		for(std::vector<MDatabaseHandle*>::iterator it = Handles.begin(); it != Handles.end(); ++it)
+		for (std::vector<MDatabaseHandle *>::iterator it = Handles.begin(); it != Handles.end(); ++it)
 		{
-			delete (CDatabaseHandle*)(*it);
+			delete (CDatabaseHandle *)(*it);
 		}
 		Handles.clear();
 	}

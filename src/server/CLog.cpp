@@ -16,7 +16,8 @@ namespace solusek
 	}
 
 	CLog::CLog(const std::string &prefix) : Prefix(prefix)
-	{ }
+	{
+	}
 
 	CLog::~CLog()
 	{
@@ -35,7 +36,7 @@ namespace solusek
 
 	void CLog::print(const std::string &s)
 	{
-		if(Enabled)
+		if (Enabled)
 			log_printf("%s", s.c_str());
 	}
 }

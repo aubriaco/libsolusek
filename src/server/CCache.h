@@ -7,7 +7,8 @@ namespace solusek
     class CCache : public ICache
     {
     private:
-        void* Context;
+        void *Context;
+
     public:
         static std::string Host;
         static int Port;
@@ -17,9 +18,9 @@ namespace solusek
 
         virtual void dispose();
 
-        virtual void set(const std::string& var, const std::string& val);
+        virtual void set(const std::string &var, const std::string &val);
 
-        virtual std::string get(const std::string& var);
+        virtual std::string get(const std::string &var);
     };
 }
 

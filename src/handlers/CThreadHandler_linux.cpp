@@ -5,29 +5,28 @@
 **
 */
 #ifdef __linux__
-#	include "CThreadHandler.h"
-#	include <sys/types.h>
-#	include <signal.h>
-#	include <pthread.h>
-#	include <unistd.h>
-#	include <stdlib.h>
-#	include <sys/wait.h>
-#	include <stdio.h>
+#include "CThreadHandler.h"
+#include <sys/types.h>
+#include <signal.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <stdio.h>
 
-
-THREADHANDLE CThreadHandler::create(THREADENTRY func, void* param, THREADID* threadId, bool forker, bool joinable)
+THREADHANDLE CThreadHandler::create(THREADENTRY func, void *param, THREADID *threadId, bool forker, bool joinable)
 {
-	if(forker)
+	if (forker)
 	{
 		signal(SIGCHLD, SIG_IGN);
 		pid_t pid = fork();
 
-		if(pid > 0)
+		if (pid > 0)
 		{
 			*threadId = (THREADID)pid;
 			return pid;
 		}
-		else if(pid == 0)
+		else if (pid == 0)
 		{
 			func(param);
 			exit(0);
@@ -39,7 +38,7 @@ THREADHANDLE CThreadHandler::create(THREADENTRY func, void* param, THREADID* thr
 	{
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
-		if(joinable)
+		if (joinable)
 			pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 		else
 			pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -56,7 +55,7 @@ void CThreadHandler::exitThread(void *r)
 
 void CThreadHandler::terminate(THREADHANDLE t)
 {
-	//kill(t, SIGKILL);
+	// kill(t, SIGKILL);
 	pthread_kill((pthread_t)&t, SIGINT);
 }
 

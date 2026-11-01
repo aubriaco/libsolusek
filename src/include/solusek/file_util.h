@@ -11,8 +11,8 @@
 
 namespace solusek
 {
-    std::string readTextFile(const std::string& fname);
-    std::vector<unsigned char> readBinaryFile(const std::string& fname);
+    std::string readTextFile(const std::string &fname);
+    std::vector<unsigned char> readBinaryFile(const std::string &fname);
 }
 
 #endif

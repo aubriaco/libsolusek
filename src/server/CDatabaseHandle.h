@@ -15,37 +15,38 @@ namespace solusek
 	private:
 		CDatabaseResource *RS;
 		std::string ID;
+
 	public:
 		CDatabaseHandle(CDatabaseResource *rs) : RS(rs) {}
 		virtual ~CDatabaseHandle()
 		{
-			if(RS)
+			if (RS)
 				delete RS;
 		}
 
 		virtual std::string getID()
 		{
-			if(RS)
+			if (RS)
 				return RS->ID;
 			else
 				return ID;
 		}
 
-		virtual void setID(const std::string& id)
+		virtual void setID(const std::string &id)
 		{
-			if(RS)
+			if (RS)
 				RS->ID = id;
 			ID = id;
 		}
 
-		virtual std::vector< std::vector<std::string> > getData()
+		virtual std::vector<std::vector<std::string>> getData()
 		{
 			return RS->Data;
 		}
 
 		virtual unsigned int size()
 		{
-			if(RS)
+			if (RS)
 				return RS->Data.size();
 			else
 				return 0;
@@ -79,7 +80,6 @@ namespace solusek
 		{
 			return RS->Error;
 		}
-
 	};
 }
 

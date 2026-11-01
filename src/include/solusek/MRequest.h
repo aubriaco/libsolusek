@@ -21,11 +21,11 @@ namespace solusek
 		std::string Body, Host, SID, QueryString;
 		std::string SSLClientCN;
 
-		MCookie getCookie(const std::string& name)
+		MCookie getCookie(const std::string &name)
 		{
-			for(std::vector<MCookie>::iterator it = Cookies.begin(); it != Cookies.end(); ++it)
+			for (std::vector<MCookie>::iterator it = Cookies.begin(); it != Cookies.end(); ++it)
 			{
-				if((*it).Name == name)
+				if ((*it).Name == name)
 					return (*it);
 			}
 			return MCookie(true);

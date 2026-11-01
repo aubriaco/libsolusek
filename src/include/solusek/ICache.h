@@ -9,10 +9,9 @@ namespace solusek
     public:
         virtual void dispose() = 0;
 
-        virtual void set(const std::string& var, const std::string& val) = 0;
+        virtual void set(const std::string &var, const std::string &val) = 0;
 
-        virtual std::string get(const std::string& var) = 0;
-        
+        virtual std::string get(const std::string &var) = 0;
     };
 }
 

@@ -11,7 +11,7 @@
 #include "CLog.h"
 #include "../include/solusek/IConfig.h"
 #if USE_YAML
-#	include <yaml-cpp/yaml.h>
+#include <yaml-cpp/yaml.h>
 #endif
 
 namespace solusek
@@ -22,18 +22,19 @@ namespace solusek
 		CLog Log;
 		bool FOK;
 		std::string ConnectionString;
+
 	public:
 		class CNode
 		{
 		public:
-			CNode* Parent;
-			std::vector<CNode*> Children;
+			CNode *Parent;
+			std::vector<CNode *> Children;
 			std::string Name;
 			std::string Value;
 
 			~CNode()
 			{
-				for(std::vector<CNode*>::iterator it = Children.begin(); it != Children.end(); ++it)
+				for (std::vector<CNode *>::iterator it = Children.begin(); it != Children.end(); ++it)
 				{
 					delete (*it);
 				}
@@ -41,6 +42,7 @@ namespace solusek
 		};
 
 		CNode *BaseNode;
+
 	public:
 		CConfig(const char *fileName);
 		~CConfig();
@@ -50,7 +52,7 @@ namespace solusek
 			return FOK;
 		}
 
-		virtual std::string get(const std::string& path);
+		virtual std::string get(const std::string &path);
 	};
 }
 

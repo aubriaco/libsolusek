@@ -13,7 +13,7 @@ namespace solusek
 {
 	size_t CDatabaseInstance::Counter = 1;
 
-	CDatabaseInstance::CDatabaseInstance(void *d,const std::string &connectionString)
+	CDatabaseInstance::CDatabaseInstance(void *d, const std::string &connectionString)
 	{
 		Used = true;
 		T = time(0);
@@ -23,11 +23,11 @@ namespace solusek
 		D = d;
 		H.setConnectionString(connectionString);
 		Connected = H.open();
-		if(!Connected)
+		if (!Connected)
 		{
 			Used.store(false, std::memory_order_release);
 			T = 0;
-		}		
+		}
 	}
 
 	CDatabaseInstance::~CDatabaseInstance()

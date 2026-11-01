@@ -7,7 +7,7 @@
 #if !defined(USE_PQXX) && !defined(USE_MYSQL)
 #include "CDatabaseHandler.h"
 
-CDatabaseResource::CDatabaseResource(void *resource, const std::string& id)
+CDatabaseResource::CDatabaseResource(void *resource, const std::string &id)
 {
 }
 
@@ -59,9 +59,7 @@ CDatabaseResource *CDatabaseTransaction::insert(const std::string &s, const std:
 	return 0;
 }
 
-
-
-bool CDatabaseTransaction::query(const std::string &s, void(*callback)(const DBROW &, void *), void *param)
+bool CDatabaseTransaction::query(const std::string &s, void (*callback)(const DBROW &, void *), void *param)
 {
 	return false;
 }

@@ -28,20 +28,19 @@ public:
 		Resource = 0;
 		Error = error;
 	}
-	CDatabaseResource(void *resource, const std::string& id = "");
+	CDatabaseResource(void *resource, const std::string &id = "");
 	~CDatabaseResource();
 
-	void setData(const std::vector< std::vector<std::string> > data)
+	void setData(const std::vector<std::vector<std::string>> data)
 	{
 		Data = data;
 	}
 
-
-	std::vector< std::vector<std::string> > Data;
+	std::vector<std::vector<std::string>> Data;
 
 	std::vector<std::string> getFirst()
 	{
-		if(Data.size() > 0)
+		if (Data.size() > 0)
 			return Data[0];
 		else
 			return std::vector<std::string>();
@@ -53,18 +52,18 @@ public:
 	{
 		return Error.size() > 0;
 	}
-
 };
 
 class CDatabaseTransaction
 {
 private:
-	#ifdef USE_PQXX
+#ifdef USE_PQXX
 	pqxx::work *W;
-	#elif defined(USE_MYSQL)
+#elif defined(USE_MYSQL)
 	MYSQL *C;
-	#endif
+#endif
 	bool Completed;
+
 public:
 	CDatabaseTransaction(void *obj);
 	~CDatabaseTransaction();
@@ -72,7 +71,7 @@ public:
 	int exec(const std::string &s);
 	void commit();
 	CDatabaseResource *insert(const std::string &s, const std::string &idField);
-	bool query(const std::string &s, void(*callback)(const DBROW &, void*), void* param = 0);
+	bool query(const std::string &s, void (*callback)(const DBROW &, void *), void *param = 0);
 	CDatabaseResource *queryOne(const std::string &s);
 
 	std::string esc(const std::string s);
@@ -80,17 +79,17 @@ public:
 	void dispose();
 };
 
-
 class CDatabaseHandler
 {
 private:
-	#ifdef USE_PQXX
+#ifdef USE_PQXX
 	pqxx::connection *C;
-	#elif defined(USE_MYSQL)
+#elif defined(USE_MYSQL)
 	MYSQL *C;
-	#endif
+#endif
 
 	std::string ConnectionString;
+
 public:
 	CDatabaseHandler();
 	~CDatabaseHandler();

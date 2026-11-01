@@ -26,10 +26,11 @@ namespace solusek
 		pthread_t ID;
 		void *Server;
 		CNetHandlerSocket *Socket;
-		std::vector<CVarVal*> Headers;
+		std::vector<CVarVal *> Headers;
 		CLog Log;
 		std::string Method, Path, QueryString, ProtocolVersion, Body;
 		int ParseErrorStatus;
+
 	public:
 		CNode(unsigned int id, void *server, CNetHandlerSocket *socket);
 		~CNode();

@@ -11,14 +11,15 @@ namespace solusek
   {
   private:
     std::string ID;
-    std::vector<CVarVal*> Items;
+    std::vector<CVarVal *> Items;
+
   public:
     CSession();
     ~CSession();
     virtual std::string getID() { return ID; }
     virtual std::string getStringValue(const std::string &name);
     virtual CVarVal *get(const std::string &name);
-    virtual void setStringValue(const std::string& name, const std::string& value);
+    virtual void setStringValue(const std::string &name, const std::string &value);
   };
 }
 

@@ -21,11 +21,12 @@ namespace solusek
 	{
 	private:
 		std::string ConnectionString;
-		std::vector<IDatabaseInstance*> Instances;
+		std::vector<IDatabaseInstance *> Instances;
 		std::atomic<bool> Running;
 		std::mutex InstancesMutex;
 		pthread_t TID;
 		int ExpireSeconds;
+
 	public:
 		CDatabase();
 		~CDatabase();
@@ -33,7 +34,7 @@ namespace solusek
 		static void *poolThread(void *param);
 		void _poolThread();
 
-		IDatabaseInstance *getUnusedInstance(const std::string& cs);
+		IDatabaseInstance *getUnusedInstance(const std::string &cs);
 
 		virtual void setConnectionString(const std::string &cs);
 
