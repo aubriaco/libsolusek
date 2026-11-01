@@ -35,6 +35,8 @@ namespace solusek
 
 		virtual void setListenPort(int port) = 0;
 
+		virtual void setListenHost(const std::string &host) = 0;
+
 		virtual void setCertificate(const char *pemFileName, const char *keyFileName, const char *password) = 0;
 
 		virtual void registerEndpoint(MEndpoint *ep) = 0;
@@ -45,7 +47,7 @@ namespace solusek
 
 		virtual void registerStaticIndex(const char *name) = 0;
 
-		virtual void setInterruptCallback(void(*callback)(int)) = 0;
+		virtual void setInterruptCallback(void (*callback)(int)) = 0;
 
 		virtual void stop() = 0;
 
@@ -53,15 +55,15 @@ namespace solusek
 
 		virtual ISession *startSession() = 0;
 
-		virtual ISession *getSession(const std::string& id) = 0;
+		virtual ISession *getSession(const std::string &id) = 0;
 
-		virtual void destroySession(const std::string& id) = 0;
+		virtual void destroySession(const std::string &id) = 0;
 
-		virtual void addMimeType(const MMimeType& type) = 0;
+		virtual void addMimeType(const MMimeType &type) = 0;
 
-		virtual void removeMimeType(const std::string& ext) = 0;
+		virtual void removeMimeType(const std::string &ext) = 0;
 
-		virtual void setCacheConfig(const std::string& host, int port) = 0;
+		virtual void setCacheConfig(const std::string &host, int port) = 0;
 
 		virtual void setLogEnabled(bool enabled) = 0;
 	};
