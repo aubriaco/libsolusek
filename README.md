@@ -1,44 +1,48 @@
-# ⛔️ DEPRECATED
+# libsolusek C++ inline HTTP Server
 
-This project is no longer supported.
-
-# Solusek C++ HTTP Server
+Run an HTTP server inside your application's execution by integrating libsolusek.
 
 ## Dependencies
 
 For `-DUSE_OPENSSL` you need `libssl`.
 
 On Ubuntu:
-```
+
+```bash
 sudo apt-get install libssl-dev
 ```
 
 On RedHat:
-```
+
+```bash
 sudo yum install openssl-devel
 ```
 
 On Alpine:
-```
+
+```bash
 sudo apt add openssl-dev
 ```
 
 For `-DUSE_MYSQL` you need `libmariadb`.
 
 On Ubuntu:
-```
+
+```bash
 sudo apt-get install libmariadb-dev
 ```
 
 On RedHat:
-```
+
+```bash
 sudo yum install mariadb-shared
 ```
 
 For `-DUSE_PQXX` you need `libpqxx`
 
 On Ubuntu:
-```
+
+```bash
 sudo apt-get install libpqxx-dev
 ```
 
@@ -46,7 +50,7 @@ If neither `-DUSE_MYSQL` or `-DUSE_PQXX` is defined the database layer will be d
 
 ## To build library
 
-```
+```bash
 mkdir build
 cd build
 cmake ..
@@ -55,7 +59,8 @@ sudo make install
 ```
 
 Post-build: Only on Ubuntu:
-```
+
+```bash
 sudo ldconfig
 ```
 
@@ -64,15 +69,16 @@ I still haven't added a make install so you might want to copy the library so to
 ## Examples
 
 I included an example app called sample-server:
-```
+
+```c++
 #include <solusek/solusek.h>
 
 static solusek::IServer *g_Server;
 
 void interruptCallback(int sig)
 {
-	printf("Interrupt signal called.\n");
-	g_Server->stop();
+ printf("Interrupt signal called.\n");
+ g_Server->stop();
 }
 
 solusek::MResponse cookieEndpoint(const void *sobj, const solusek::MRequest& data)
@@ -116,4 +122,5 @@ int main(int argc, char **argv)
 ## Credits
 
 Created by Alessandro Ubriaco
-http://www.solusek.com/
+<https://alessandroubriaco.com/>
+<https://solusek.com/>
