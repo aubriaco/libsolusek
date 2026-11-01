@@ -27,10 +27,12 @@ namespace solusek
 	std::string getFileModTime(const std::string &path)
 	{
 		struct stat attr;
-		if (stat(path.c_str(), &attr) != 0) return std::string();
+		if (stat(path.c_str(), &attr) != 0)
+			return std::string();
 		struct tm utcTime;
 		char buffer[64];
-		if (!gmtime_r(&attr.st_mtime, &utcTime) || !strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", &utcTime)) return std::string();
+		if (!gmtime_r(&attr.st_mtime, &utcTime) || !strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", &utcTime))
+			return std::string();
 		return std::string(buffer);
 	}
 
@@ -61,27 +63,27 @@ namespace solusek
 			delete node;
 		}
 		*/
-		while(!Endpoints.empty())
+		while (!Endpoints.empty())
 		{
 			delete Endpoints.back();
 			Endpoints.pop_back();
 		}
 		Endpoints.clear();
-		while(!Sessions.empty())
+		while (!Sessions.empty())
 		{
 			delete Sessions.back();
 			Sessions.pop_back();
 		}
-		while(!StaticEndpoints.empty())
+		while (!StaticEndpoints.empty())
 		{
 			delete StaticEndpoints.back();
 			StaticEndpoints.pop_back();
 		}
 		if (Database)
 			delete Database;
-		#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		OPENSSL_cleanup();
-		#endif
+#endif
 	}
 
 	void CServer::addDefaultMimeTypes()
@@ -146,17 +148,22 @@ namespace solusek
 		{
 			MainSocket->mutexSSL();
 			MainSocket->setSSLMutual(false);
-			if(CertPassword.size() > 0)
+			if (CertPassword.size() > 0)
 				MainSocket->setSSLCertificatePassword(CertPassword.c_str());
-			if(CertFileName.size() > 0)
+			if (CertFileName.size() > 0)
 				MainSocket->setSSLCertificate(CertFileName.c_str());
-			if(KeyFileName.size() > 0)
+			if (KeyFileName.size() > 0)
 				MainSocket->setSSLPrivateKeyFile(KeyFileName.c_str());
 		}
 
 		MainSocket->setTimeout(5);
 
-		if (MainSocket->bind(ListenPort))
+		const char *host = 0;
+
+		if (ListenHost.size() > 0)
+			host = ListenHost.c_str();
+
+		if (MainSocket->bind(ListenPort, host))
 		{
 
 			Log.print("Listener initialized.\n");
@@ -191,10 +198,9 @@ namespace solusek
 				SServerPackage *pkg = new SServerPackage();
 				pkg->Server = this;
 				pkg->Socket = socket;
-					
-				
+
 				THREADID threadId = 0;
-				//THREADID threadId = fork();
+				// THREADID threadId = fork();
 
 				const int threadStatus = TH.create(thread_runNode, (void *)pkg, &threadId, false, false);
 				if (threadStatus != 0)
@@ -206,7 +212,7 @@ namespace solusek
 					ThreadCount.fetch_sub(1, std::memory_order_acq_rel);
 					continue;
 				}
-					
+
 				/*
 				if(threadId == 0)
 				{
@@ -227,7 +233,8 @@ namespace solusek
 			Log.print("Waiting for active client threads to finish.\n");
 			{
 				std::unique_lock<std::mutex> lock(WorkersMutex);
-				WorkersCondition.wait(lock, [this] { return ThreadCount.load(std::memory_order_acquire) == 0; });
+				WorkersCondition.wait(lock, [this]
+									  { return ThreadCount.load(std::memory_order_acquire) == 0; });
 			}
 			Log.print("All client threads have stopped.\n");
 			return E_ERROR_NONE;
@@ -266,7 +273,11 @@ namespace solusek
 		}
 		catch (...)
 		{
-			if (socket) { socket->close(); delete socket; }
+			if (socket)
+			{
+				socket->close();
+				delete socket;
+			}
 			Log.print("Unhandled exception in client worker.\n");
 		}
 		{
@@ -328,7 +339,8 @@ namespace solusek
 	MEndpoint *CServer::getStaticEndpoint(const char *path, const char *method, const char *host)
 	{
 		std::string fpath(path ? path : "");
-		if (fpath.empty()) return 0;
+		if (fpath.empty())
+			return 0;
 		if (fpath.find("..") != std::string::npos)
 			return 0;
 		if (fpath[fpath.size() - 1] == '/')
@@ -473,7 +485,8 @@ namespace solusek
 		CNetHandlerSocket *socket = NH.createSocket(false);
 		if (socket)
 		{
-			if (socket->connect("127.0.0.1", ListenPort)) socket->close();
+			if (socket->connect("127.0.0.1", ListenPort))
+				socket->close();
 			delete socket;
 		}
 	}
@@ -534,7 +547,7 @@ namespace solusek
 		}
 	}
 
-	void CServer::setCacheConfig(const std::string& host, int port)
+	void CServer::setCacheConfig(const std::string &host, int port)
 	{
 		CCache::Host = host;
 		CCache::Port = port;

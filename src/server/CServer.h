@@ -31,6 +31,7 @@ namespace solusek
 	{
 	private:
 		CLog Log;
+
 	protected:
 		CNetHandler NH;
 		CThreadHandler TH;
@@ -39,12 +40,13 @@ namespace solusek
 		CDatabase *Database;
 		bool Secure;
 		int ListenPort;
+		std::string ListenHost;
 		std::string CertFileName, CertPassword, KeyFileName;
-		std::vector<CNode*> Nodes;
-		std::vector<MEndpoint*> Endpoints;
-		std::vector<MStaticEndpoint*> StaticEndpoints;
-    std::vector<std::string> StaticIndexes;
-		std::vector<CSession*> Sessions;
+		std::vector<CNode *> Nodes;
+		std::vector<MEndpoint *> Endpoints;
+		std::vector<MStaticEndpoint *> StaticEndpoints;
+		std::vector<std::string> StaticIndexes;
+		std::vector<CSession *> Sessions;
 		std::vector<MMimeType> MimeTypes;
 		std::atomic<bool> StopSignal;
 		unsigned int ThreadLimit;
@@ -52,8 +54,8 @@ namespace solusek
 		std::mutex NodesMutex;
 		std::mutex WorkersMutex;
 		std::condition_variable WorkersCondition;
-	public:
 
+	public:
 		CServer();
 		virtual ~CServer();
 
@@ -97,7 +99,9 @@ namespace solusek
 
 		virtual void setListenPort(int port) { ListenPort = port; }
 
-		virtual void setInterruptCallback(void(*callback)(int));
+		virtual void setListenHost(const std::string &host) { ListenHost = host; }
+
+		virtual void setInterruptCallback(void (*callback)(int));
 
 		virtual void stop();
 
@@ -105,17 +109,17 @@ namespace solusek
 
 		virtual ISession *startSession();
 
-		virtual ISession *getSession(const std::string& id);
+		virtual ISession *getSession(const std::string &id);
 
-		virtual void destroySession(const std::string& id);
+		virtual void destroySession(const std::string &id);
 
-		virtual MMimeType* getMimeType(const std::string &ext);
+		virtual MMimeType *getMimeType(const std::string &ext);
 
-		virtual void addMimeType(const MMimeType& type);
+		virtual void addMimeType(const MMimeType &type);
 
-		virtual void removeMimeType(const std::string& ext);
+		virtual void removeMimeType(const std::string &ext);
 
-		virtual void setCacheConfig(const std::string& host, int port);
+		virtual void setCacheConfig(const std::string &host, int port);
 
 		virtual void setLogEnabled(bool enabled) { Log.setEnabled(enabled); }
 	};
