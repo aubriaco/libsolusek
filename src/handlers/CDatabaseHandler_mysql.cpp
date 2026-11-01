@@ -23,15 +23,25 @@ CDatabaseResource::~CDatabaseResource()
 
 CDatabaseTransaction::CDatabaseTransaction(void *obj)
 {
-	C = (MYSQL*)obj;
+	C = static_cast<MYSQL *>(obj);
+	Completed = false;
 }
 
 CDatabaseTransaction::~CDatabaseTransaction()
 {
+	if (C && !Completed)
+		mysql_rollback(C);
 }
 
 void CDatabaseTransaction::commit()
 {
+	if (!C) throw std::runtime_error("Not connected.");
+	if (!Completed)
+	{
+		if (mysql_commit(C) != 0)
+			throw std::runtime_error(mysql_error(C));
+		Completed = true;
+	}
 }
 
 CDatabaseHandler::CDatabaseHandler() : C(0)
@@ -109,8 +119,9 @@ void CDatabaseHandler::close()
 
 CDatabaseTransaction *CDatabaseHandler::begin()
 {
-	if(!C)
-		throw std::runtime_error("Not connected.");
+	if (!C) throw std::runtime_error("Not connected.");
+	if (mysql_query(C, "START TRANSACTION") != 0)
+		throw std::runtime_error(mysql_error(C));
 	return new CDatabaseTransaction(C);
 }
 

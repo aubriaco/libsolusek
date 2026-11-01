@@ -152,8 +152,10 @@ CNetHandlerSocket* CNetHandlerSocket::accept()
 	sockaddr clientAddress;
 	memset(&clientAddress, 0, sizeof(sockaddr));
 	socklen_t clientLength = sizeof(sockaddr);
-	int sid = 0;
-	while((sid = ::accept(SID, (sockaddr *) &clientAddress, &clientLength)) == SOCKET_ERROR);
+	int sid = -1;
+	while ((sid = ::accept(SID, (sockaddr *)&clientAddress, &clientLength)) == SOCKET_ERROR && errno == EINTR) { }
+	if (sid == SOCKET_ERROR)
+		return 0;
 
 	char ipaddr[INET6_ADDRSTRLEN];
 	inet_ntop(clientAddress.sa_family, get_in_addr((struct sockaddr *)&clientAddress), ipaddr, sizeof(ipaddr));

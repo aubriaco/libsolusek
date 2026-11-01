@@ -22,14 +22,16 @@ namespace solusek
 	{
 		CServer *Server;
 		CNetHandlerSocket *Socket;
-		pthread_t ID;
 	};
 
 	std::string getFileModTime(const std::string &path)
 	{
 		struct stat attr;
-		stat(path.c_str(), &attr);
-		return ctime(&attr.st_mtime);
+		if (stat(path.c_str(), &attr) != 0) return std::string();
+		struct tm utcTime;
+		char buffer[64];
+		if (!gmtime_r(&attr.st_mtime, &utcTime) || !strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", &utcTime)) return std::string();
+		return std::string(buffer);
 	}
 
 	CServer::CServer()
@@ -130,6 +132,7 @@ namespace solusek
 
 	EErrorCode CServer::run()
 	{
+		StopSignal.store(false, std::memory_order_release);
 		NH.initDependencies();
 
 		MainSocket = NH.createSocket(Secure);
@@ -171,11 +174,6 @@ namespace solusek
 				if (!socket) // rejected/failed connection
 					continue;
 
-				const unsigned int activeThreads = ThreadCount.fetch_add(1, std::memory_order_acq_rel) + 1;
-				char tlimit[128];
-				snprintf(tlimit, sizeof(tlimit), "Thread Count %u of %u allowed.\n", activeThreads, ThreadLimit);
-				Log.print(tlimit);
-
 				if (StopSignal)
 				{
 					socket->close();
@@ -183,13 +181,17 @@ namespace solusek
 					break;
 				}
 
+				const unsigned int activeThreads = ThreadCount.fetch_add(1, std::memory_order_acq_rel) + 1;
+				char tlimit[128];
+				snprintf(tlimit, sizeof(tlimit), "Thread Count %u of %u allowed.\n", activeThreads, ThreadLimit);
+				Log.print(tlimit);
+
 				Log.print("Client connection attempt.\n");
 
 				SServerPackage *pkg = new SServerPackage();
 				pkg->Server = this;
 				pkg->Socket = socket;
-				pkg->ID = 0;
-				
+					
 				
 				THREADID threadId = 0;
 				//THREADID threadId = fork();
@@ -204,8 +206,7 @@ namespace solusek
 					ThreadCount.fetch_sub(1, std::memory_order_acq_rel);
 					continue;
 				}
-				pkg->ID = threadId;
-				
+					
 				/*
 				if(threadId == 0)
 				{
@@ -215,8 +216,7 @@ namespace solusek
 				}
 				else
 				{
-					pkg->ID = threadId;
-				}
+						}
 				*/
 			}
 
@@ -224,11 +224,12 @@ namespace solusek
 			delete MainSocket;
 			MainSocket = 0;
 
-			//if (Nodes.size() > 0)
-			//	Log.print("Waiting for nodes to gracefully terminate.\n");
-			//while (Nodes.size() > 0)
-			//	sleep(1);
-
+			Log.print("Waiting for active client threads to finish.\n");
+			{
+				std::unique_lock<std::mutex> lock(WorkersMutex);
+				WorkersCondition.wait(lock, [this] { return ThreadCount.load(std::memory_order_acquire) == 0; });
+			}
+			Log.print("All client threads have stopped.\n");
 			return E_ERROR_NONE;
 		}
 		else
@@ -242,12 +243,11 @@ namespace solusek
 
 	THREADFUNC CServer::thread_runNode(void *param)
 	{
-		SServerPackage *pkg = (SServerPackage *)param;
-		while (pkg->ID == 0)
-			usleep(1);
-		pkg->Server->runNode(pkg->ID, pkg->Socket);
+		SServerPackage *pkg = static_cast<SServerPackage *>(param);
+		CServer *server = pkg->Server;
+		CNetHandlerSocket *socket = pkg->Socket;
 		delete pkg;
-		pthread_exit(0);
+		server->runNode(pthread_self(), socket);
 		return 0;
 	}
 
@@ -255,13 +255,25 @@ namespace solusek
 	{
 		Log.print("Running node...\n");
 		Log.print("Thread ID: " + std::to_string(id) + "\n");
-		CNode *node = new CNode(id, this, socket);
+		try
 		{
-			std::lock_guard<std::mutex> guard(NodesMutex);
-			Nodes.push_back(node);
+			CNode *node = new CNode(id, this, socket);
+			{
+				std::lock_guard<std::mutex> guard(NodesMutex);
+				Nodes.push_back(node);
+			}
+			node->run();
 		}
-		node->run();
-		ThreadCount.fetch_sub(1, std::memory_order_acq_rel);
+		catch (...)
+		{
+			if (socket) { socket->close(); delete socket; }
+			Log.print("Unhandled exception in client worker.\n");
+		}
+		{
+			std::lock_guard<std::mutex> guard(WorkersMutex);
+			ThreadCount.fetch_sub(1, std::memory_order_acq_rel);
+		}
+		WorkersCondition.notify_all();
 	}
 
 	void CServer::removeNode(CNode *node)
@@ -315,7 +327,8 @@ namespace solusek
 
 	MEndpoint *CServer::getStaticEndpoint(const char *path, const char *method, const char *host)
 	{
-		std::string fpath(path);
+		std::string fpath(path ? path : "");
+		if (fpath.empty()) return 0;
 		if (fpath.find("..") != std::string::npos)
 			return 0;
 		if (fpath[fpath.size() - 1] == '/')
@@ -431,7 +444,7 @@ namespace solusek
 		std::string dpath(path);
 		for (std::vector<std::string>::iterator it = StaticIndexes.begin(); it != StaticIndexes.end(); ++it)
 		{
-			if ((*it)[(*it).size() - 1] == '/')
+			if (it->empty() || it->back() == '/')
 				continue;
 			MEndpoint *endpoint = getStaticEndpoint((dpath + (*it)).c_str(), method, host);
 			if (endpoint != 0)
@@ -458,9 +471,11 @@ namespace solusek
 	{
 		StopSignal = true;
 		CNetHandlerSocket *socket = NH.createSocket(false);
-		socket->connect("127.0.0.1", ListenPort);
-		socket->close();
-		delete socket;
+		if (socket)
+		{
+			if (socket->connect("127.0.0.1", ListenPort)) socket->close();
+			delete socket;
+		}
 	}
 
 	ISession *CServer::startSession()

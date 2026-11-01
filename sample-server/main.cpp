@@ -1,4 +1,5 @@
 #include <solusek/solusek.h>
+#include <cstdlib>
 
 static solusek::IServer *g_Server;
 
@@ -114,7 +115,15 @@ int main(int argc, char **argv)
 	db->dispose();
 #endif
 
-	g_Server->setListenPort(8080);
+	int listenPort = 8080;
+	if (argc > 1)
+	{
+		char *end = 0;
+		long requestedPort = strtol(argv[1], &end, 10);
+		if (end && *end == '\0' && requestedPort > 0 && requestedPort <= 65535)
+			listenPort = static_cast<int>(requestedPort);
+	}
+	g_Server->setListenPort(listenPort);
 
 	g_Server->addStaticDirectory("../static/solusek/", "solusek.com");
 	g_Server->addStaticDirectory("../static/");

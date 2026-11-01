@@ -64,6 +64,7 @@ private:
 	#elif defined(USE_MYSQL)
 	MYSQL *C;
 	#endif
+	bool Completed;
 public:
 	CDatabaseTransaction(void *obj);
 	~CDatabaseTransaction();

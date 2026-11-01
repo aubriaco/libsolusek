@@ -17,7 +17,7 @@ namespace solusek
 	{
 	public:
 		MResponse() { ContentType = "text/plain"; Code = 200; }
-		MResponse(int code, const std::string &body, const std::string& sid = std::string(), const std::string& contentType = "text/plain") : Code(code), Body(body), ContentType(contentType), SID(sid) { ContentType = "text/plain"; }
+		MResponse(int code, const std::string &body, const std::string& sid = std::string(), const std::string& contentType = "text/plain") : Code(code), Body(body), ContentType(contentType), SID(sid) {}
 
 		int Code;
 		std::string Body, ContentType, Date, SID, Location;
@@ -28,12 +28,25 @@ namespace solusek
 		{
 			switch(Code)
 			{
-				case 200:
-					return "OK";
-				case 404:
-					return "Not Found";
-				case 400:
-					return "Bad Request";
+				case 200: return "OK";
+				case 201: return "Created";
+				case 202: return "Accepted";
+				case 204: return "No Content";
+				case 301: return "Moved Permanently";
+				case 302: return "Found";
+				case 304: return "Not Modified";
+				case 401: return "Unauthorized";
+				case 403: return "Forbidden";
+				case 405: return "Method Not Allowed";
+				case 408: return "Request Timeout";
+				case 413: return "Payload Too Large";
+				case 415: return "Unsupported Media Type";
+				case 429: return "Too Many Requests";
+				case 400: return "Bad Request";
+				case 404: return "Not Found";
+				case 500: return "Internal Server Error";
+				case 501: return "Not Implemented";
+				case 503: return "Service Unavailable";
 				default:
 					return "Unknown";
 			}

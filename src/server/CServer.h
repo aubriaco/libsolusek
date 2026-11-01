@@ -20,6 +20,8 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
+#include <pthread.h>
+#include <condition_variable>
 
 #define SOLUSEK_DEFAULT_THREAD_LIMIT 25
 
@@ -48,6 +50,8 @@ namespace solusek
 		unsigned int ThreadLimit;
 		std::atomic<unsigned int> ThreadCount;
 		std::mutex NodesMutex;
+		std::mutex WorkersMutex;
+		std::condition_variable WorkersCondition;
 	public:
 
 		CServer();
