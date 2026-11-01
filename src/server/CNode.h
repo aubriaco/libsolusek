@@ -8,6 +8,7 @@
 #define __C_NODE_INCLUDED__
 #include "../handlers/CNetHandler.h"
 #include "../include/solusek/MEndpoint.h"
+#include "../include/solusek/IVarVal.h"
 #include "CVarVal.h"
 #include "CLog.h"
 #include <vector>
@@ -26,7 +27,7 @@ namespace solusek
 		pthread_t ID;
 		void *Server;
 		CNetHandlerSocket *Socket;
-		std::vector<CVarVal *> Headers;
+		std::vector<IVarVal *> Headers;
 		CLog Log;
 		std::string Method, Path, QueryString, ProtocolVersion, Body;
 		int ParseErrorStatus;
@@ -47,7 +48,7 @@ namespace solusek
 
 		void dispose();
 
-		CVarVal *getHeader(const char *name);
+		IVarVal *getHeader(const char *name);
 	};
 }
 

@@ -36,10 +36,10 @@ namespace solusek
 		if (Socket)
 			delete Socket;
 		Log.print("Cleaning up node.\n");
-		for (std::vector<CVarVal *>::iterator it = Headers.begin(); it != Headers.end(); ++it)
+		for (std::vector<IVarVal *>::iterator it = Headers.begin(); it != Headers.end(); ++it)
 		{
 			if ((*it))
-				delete (*it);
+				(*it)->dispose();
 		}
 		Log.print("Node cleanup complete.\n");
 	}
@@ -73,19 +73,19 @@ namespace solusek
 		if (!Path.empty())
 		{
 			std::string host;
-			if (CVarVal *h = getHeader("Host"))
-				host = h->Val;
+			if (IVarVal *h = getHeader("Host"))
+				host = h->getVal();
 			MEndpoint *ep = server->getEndpoint(Path.c_str(), Method.c_str());
 			if (ep)
 			{
 				MRequest request(Body);
 				request.QueryString = QueryString;
 				request.Host = host;
-				if (CVarVal *h = getHeader("X-SSL-Client-CN"))
-					request.SSLClientCN = h->Val;
-				if (CVarVal *h = getHeader("Cookie"))
+				if (IVarVal *h = getHeader("X-SSL-Client-CN"))
+					request.SSLClientCN = h->getVal();
+				if (IVarVal *h = getHeader("Cookie"))
 				{
-					std::string all = h->Val;
+					std::string all = h->getVal();
 					std::size_t pos = 0;
 					while (pos < all.size())
 					{
@@ -348,15 +348,15 @@ namespace solusek
 	void CNode::readBody()
 	{
 		Body.clear();
-		CVarVal *cl = getHeader("content-length"), *te = getHeader("transfer-encoding");
+		IVarVal *cl = getHeader("content-length"), *te = getHeader("transfer-encoding");
 		unsigned int contentLengthCount = 0, transferEncodingCount = 0, hostCount = 0;
 		for (std::size_t i = 0; i < Headers.size(); ++i)
 		{
-			if (Headers[i]->Var == "content-length")
+			if (Headers[i]->getVar() == "content-length")
 				++contentLengthCount;
-			if (Headers[i]->Var == "transfer-encoding")
+			if (Headers[i]->getVar() == "transfer-encoding")
 				++transferEncodingCount;
-			if (Headers[i]->Var == "host")
+			if (Headers[i]->getVar() == "host")
 				++hostCount;
 		}
 		if (contentLengthCount > 1 || transferEncodingCount > 1 || hostCount > 1)
@@ -367,7 +367,7 @@ namespace solusek
 			throw std::runtime_error("Content-Length and Transfer-Encoding cannot be combined");
 		if (te)
 		{
-			std::string enc = strtolower(te->Val);
+			std::string enc = strtolower(te->getVal());
 			trim(enc);
 			if (enc != "chunked")
 				throw std::runtime_error("Unsupported Transfer-Encoding");
@@ -416,14 +416,14 @@ namespace solusek
 		}
 		if (!cl)
 			return;
-		if (cl->Val.empty())
+		if (cl->getVal().empty())
 			throw std::runtime_error("Empty Content-Length");
 		unsigned long long length = 0;
-		for (std::size_t i = 0; i < cl->Val.size(); ++i)
+		for (std::size_t i = 0; i < cl->getVal().size(); ++i)
 		{
-			if (cl->Val[i] < '0' || cl->Val[i] > '9')
+			if (cl->getVal()[i] < '0' || cl->getVal()[i] > '9')
 				throw std::runtime_error("Invalid Content-Length");
-			unsigned int d = cl->Val[i] - '0';
+			unsigned int d = cl->getVal()[i] - '0';
 			if (length > (std::numeric_limits<unsigned long long>::max() - d) / 10)
 				throw std::length_error("Content-Length overflow");
 			length = length * 10 + d;
@@ -451,13 +451,13 @@ namespace solusek
 		delete this;
 	}
 
-	CVarVal *CNode::getHeader(const char *name)
+	IVarVal *CNode::getHeader(const char *name)
 	{
 		std::string tmp = strtolower(name);
 		std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
-		for (std::vector<CVarVal *>::iterator it = Headers.begin(); it != Headers.end(); ++it)
+		for (std::vector<IVarVal *>::iterator it = Headers.begin(); it != Headers.end(); ++it)
 		{
-			if (strtolower((*it)->Var) == tmp)
+			if (strtolower((*it)->getVar()) == tmp)
 				return (*it);
 		}
 		return 0;
