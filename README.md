@@ -1,6 +1,22 @@
-# libsolusek C++ inline HTTP Server
+# libsolusek
 
-Run an HTTP server inside your application's execution by integrating libsolusek.
+**libsolusek** is a C++ library designed to embed an HTTP/HTTPS server directly into your applications. It provides a lightweight, flexible foundation for building web services, REST APIs, and network-enabled applications without requiring a separate web server.
+
+The library includes HTTP request and response handling, SSL/TLS support, session management, database connectivity, and caching capabilities.
+
+## Key Features
+
+- **Embedded HTTP/HTTPS Server** – Run a web server directly within your C++ application.
+- **SSL/TLS Support** – Secure connections using OpenSSL.
+- **Database Integration** – Support for PostgreSQL and MySQL/MariaDB.
+- **Redis Integration** – Caching and session-related functionality.
+- **Session Management** – Manage application sessions and state.
+- **Multithreaded Processing** – Handle concurrent client connections.
+- **CMake Build System** – Build and integrate the library into Linux-based applications.
+
+## Use Cases
+
+Ideal for embedded web interfaces, REST APIs, backend services, administration portals, and applications requiring integrated HTTP/HTTPS functionality.
 
 ## Dependencies
 
