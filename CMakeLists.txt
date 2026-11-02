@@ -25,7 +25,7 @@ if(DEBUG)
 else()
     add_compile_options(-O2)
 endif()
-add_compile_options(-Wall -Wextra -Wpedantic)
+
 
 file(GLOB_RECURSE SOLUSEK_SOURCES CONFIGURE_DEPENDS
     "src/*.cpp" "src/*.c")
@@ -35,6 +35,12 @@ target_include_directories(solusek PUBLIC
     $<INSTALL_INTERFACE:include>)
 target_link_libraries(solusek PUBLIC OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 target_compile_definitions(solusek PRIVATE USE_OPENSSL)
+
+if(MSVC)
+    target_compile_options(solusek PRIVATE /W4)
+else()
+    target_compile_options(solusek PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 if(USE_MYSQL)
     find_package(PkgConfig REQUIRED)
