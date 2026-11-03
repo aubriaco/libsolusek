@@ -303,9 +303,8 @@ bool CNetHandlerSocket::close()
 #else
 		::shutdown(SID, SHUT_RDWR);
 		::close(SID);
-		#endif
+#endif
 		SID = INVALID_SOCKET;
 	}
 	return true;
 }
-

@@ -185,7 +185,8 @@ namespace solusek
 				try
 				{
 					std::thread([this, socket]
-								{ runNode(std::this_thread::get_id(), socket); }).detach();
+								{ runNode(std::this_thread::get_id(), socket); })
+						.detach();
 				}
 				catch (const std::system_error &)
 				{
@@ -193,7 +194,6 @@ namespace solusek
 					delete socket;
 					ThreadCount.fetch_sub(1, std::memory_order_acq_rel);
 				}
-
 			}
 
 			MainSocket->close();

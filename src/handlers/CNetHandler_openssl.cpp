@@ -33,10 +33,10 @@ static void sslLockingCallback(int mode, int type, const char *, int)
 static void thread_setup()
 {
 	static std::once_flag initialized;
-	std::call_once(initialized, [] {
+	std::call_once(initialized, []
+				   {
 		sslLocks.reset(new std::mutex[CRYPTO_num_locks()]);
-		CRYPTO_set_locking_callback(sslLockingCallback);
-	});
+		CRYPTO_set_locking_callback(sslLockingCallback); });
 }
 #endif
 
@@ -49,7 +49,7 @@ bool CNetHandlerSocket::isConnected()
 	char buf;
 	if (SID == INVALID_SOCKET)
 		return false;
-	#ifdef _WIN32
+#ifdef _WIN32
 	fd_set readable;
 	FD_ZERO(&readable);
 	FD_SET(SID, &readable);
@@ -66,7 +66,7 @@ void CNetHandlerSocket::setupSSL(bool re)
 {
 	CNetHandler::initDependencies();
 
-	#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	thread_setup();
 #endif
 

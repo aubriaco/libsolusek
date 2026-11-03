@@ -91,7 +91,6 @@ namespace solusek
 
 		void removeNode(CNode *node);
 
-
 		void runNode(std::thread::id id, CNetHandlerSocket *socket);
 
 		virtual void setListenPort(int port) { ListenPort = port; }

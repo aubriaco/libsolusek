@@ -12,7 +12,6 @@
 #include <vector>
 #include "../include/solusek/INetHandlerSocket.h"
 
-
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -146,7 +145,8 @@ public:
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		OPENSSL_init_ssl(0, nullptr);
 #else
-		static const bool initialized = [] {
+		static const bool initialized = []
+		{
 			SSL_library_init();
 			SSL_load_error_strings();
 			OpenSSL_add_all_algorithms();
