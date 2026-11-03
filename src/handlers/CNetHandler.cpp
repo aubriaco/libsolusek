@@ -4,13 +4,33 @@
 ** Copyright (c) 2019 Alessandro Ubriaco
 **
 */
-#ifdef __linux__
 #include "CNetHandler.h"
+#include <cstring>
+#ifndef _WIN32
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <cerrno>
+#endif
 
 using namespace solusek;
+
+#ifdef _WIN32
+namespace
+{
+	class WinsockRuntime
+	{
+	public:
+		WinsockRuntime()
+		{
+			WSADATA data;
+			if (WSAStartup(MAKEWORD(2, 2), &data) != 0)
+				throw std::runtime_error("Winsock initialization failed");
+		}
+
+		~WinsockRuntime() { WSACleanup(); }
+	};
+}
+#endif
 
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -21,11 +41,14 @@ void *get_in_addr(struct sockaddr *sa)
 
 CNetHandlerSocket *CNetHandler::createSocket(bool ssl)
 {
-	return new CNetHandlerSocket(0, ssl);
+	return new CNetHandlerSocket(INVALID_SOCKET, ssl);
 }
 
-CNetHandlerSocket::CNetHandlerSocket(int sid, bool ssl, bool sslMutual, SSL_CTX *ctx, SSL *_ssl, const std::string &ipaddr)
+CNetHandlerSocket::CNetHandlerSocket(SocketHandle sid, bool ssl, bool sslMutual, SSL_CTX *ctx, SSL *_ssl, const std::string &ipaddr)
 {
+#ifdef _WIN32
+	static WinsockRuntime winsock;
+#endif
 	Timeout = 0;
 	_SSL = _ssl;
 	CTX = ctx;
@@ -41,7 +64,8 @@ CNetHandlerSocket::CNetHandlerSocket(int sid, bool ssl, bool sslMutual, SSL_CTX 
 	if (SSLEnabled && !_SSL)
 		setupSSL();
 	UniqueID = 0;
-	if (sid == 0)
+	Ready = true;
+	if (sid == INVALID_SOCKET)
 	{
 		SID = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -51,12 +75,18 @@ CNetHandlerSocket::CNetHandlerSocket(int sid, bool ssl, bool sslMutual, SSL_CTX 
 		{
 			int val = 1;
 			int nval = 0;
-			setsockopt(SID, SOL_SOCKET, SO_REUSEADDR, (const void *)&val, sizeof(val));
-			setsockopt(SID, SOL_SOCKET, SO_KEEPALIVE, (const void *)&nval, sizeof(nval));
-			struct timeval timeout;
-			timeout.tv_sec = 10;
-			timeout.tv_usec = 0;
-			setsockopt(SID, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(struct timeval));
+#ifdef _WIN32
+			setsockopt(SID, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, reinterpret_cast<const char *>(&val), sizeof(val));
+#else
+			setsockopt(SID, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+#endif
+			setsockopt(SID, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<const char *>(&nval), sizeof(nval));
+#ifdef _WIN32
+			const DWORD timeout = 10000;
+#else
+			const timeval timeout = {10, 0};
+#endif
+			setsockopt(SID, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char *>(&timeout), sizeof(timeout));
 			// int set = 1;
 			// setsockopt(sd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
 			Ready = true;
@@ -76,17 +106,18 @@ CNetHandlerSocket::~CNetHandlerSocket()
 void CNetHandlerSocket::setTimeout(int timeout)
 {
 	Timeout = timeout;
-	struct timeval tv;
-	tv.tv_sec = timeout;
-	tv.tv_usec = 0;
-	setsockopt(SID, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval));
-	setsockopt(SID, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(struct timeval));
+#ifdef _WIN32
+	const DWORD tv = static_cast<DWORD>(timeout) * 1000;
+#else
+	const timeval tv = {timeout, 0};
+#endif
+	setsockopt(SID, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char *>(&tv), sizeof(tv));
+	setsockopt(SID, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char *>(&tv), sizeof(tv));
 }
 
 bool CNetHandlerSocket::bind(int port, const char *host)
 {
-	sockaddr_in addr;
-	bzero(&addr, sizeof(addr));
+	sockaddr_in addr = {};
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = host ? inet_addr(host) : INADDR_ANY;
 	addr.sin_port = htons(port);
@@ -149,20 +180,29 @@ CNetHandlerSocket *CNetHandlerSocket::accept()
 {
 	sockaddr clientAddress;
 	memset(&clientAddress, 0, sizeof(sockaddr));
+#ifdef _WIN32
+	int clientLength = sizeof(sockaddr);
+	const SocketHandle sid = ::accept(SID, &clientAddress, &clientLength);
+#else
 	socklen_t clientLength = sizeof(sockaddr);
-	int sid = -1;
+	SocketHandle sid;
 	while ((sid = ::accept(SID, (sockaddr *)&clientAddress, &clientLength)) == SOCKET_ERROR && errno == EINTR)
 	{
 	}
-	if (sid == SOCKET_ERROR)
+#endif
+	if (sid == INVALID_SOCKET)
 		return 0;
 
-	char ipaddr[INET6_ADDRSTRLEN];
+	char ipaddr[INET6_ADDRSTRLEN] = {};
 	inet_ntop(clientAddress.sa_family, get_in_addr((struct sockaddr *)&clientAddress), ipaddr, sizeof(ipaddr));
 
 	if (!isWhitelisted(ipaddr) && isBlacklisted(ipaddr))
 	{
+#ifdef _WIN32
+		::closesocket(sid);
+#else
 		::close(sid);
+#endif
 		return 0;
 	}
 
@@ -195,7 +235,10 @@ bool CNetHandlerSocket::connect(const char *host, int port)
 
 	struct addrinfo *result;
 
-	int gai = getaddrinfo(host, NULL, 0, &result);
+	addrinfo hints = {};
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	int gai = getaddrinfo(host, nullptr, &hints, &result);
 
 	if (gai != 0)
 		return false;
@@ -217,7 +260,7 @@ bool CNetHandlerSocket::connect(const char *host, int port)
 
 bool CNetHandlerSocket::writeBuffer(const void *buf, int len)
 {
-	if (len < 0 || (len > 0 && !buf) || SID < 0)
+	if (len < 0 || (len > 0 && !buf) || SID == INVALID_SOCKET)
 		return false;
 	const char *data = static_cast<const char *>(buf);
 	int offset = 0;
@@ -228,10 +271,16 @@ bool CNetHandlerSocket::writeBuffer(const void *buf, int len)
 			written = ::SSL_write(_SSL, data + offset, len - offset);
 		else
 		{
+#ifdef _WIN32
+			written = ::send(SID, data + offset, len - offset, 0);
+			if (written == SOCKET_ERROR && WSAGetLastError() == WSAEINTR)
+				continue;
+#else
 			written = static_cast<int>(::send(SID, data + offset,
 											  static_cast<size_t>(len - offset), MSG_NOSIGNAL));
 			if (written < 0 && errno == EINTR)
 				continue;
+#endif
 		}
 		if (written <= 0)
 		{
@@ -246,13 +295,16 @@ bool CNetHandlerSocket::writeBuffer(const void *buf, int len)
 
 bool CNetHandlerSocket::close()
 {
-	if (SID >= 0)
+	if (SID != INVALID_SOCKET)
 	{
+#ifdef _WIN32
+		::shutdown(SID, SD_BOTH);
+		::closesocket(SID);
+#else
 		::shutdown(SID, SHUT_RDWR);
 		::close(SID);
-		SID = -1;
+#endif
+		SID = INVALID_SOCKET;
 	}
 	return true;
 }
-
-#endif

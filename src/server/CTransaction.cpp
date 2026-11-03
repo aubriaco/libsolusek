@@ -7,7 +7,6 @@
 #include "CTransaction.h"
 #include "../include/solusek/string_util.h"
 #include "CDatabaseHandle.h"
-#include <unistd.h>
 #include <mutex>
 
 namespace solusek

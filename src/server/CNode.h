@@ -11,6 +11,7 @@
 #include "../include/solusek/IVarVal.h"
 #include "CVarVal.h"
 #include "CLog.h"
+#include <thread>
 #include <vector>
 #include <cstddef>
 
@@ -24,7 +25,7 @@ namespace solusek
 	class CNode
 	{
 	private:
-		pthread_t ID;
+		std::thread::id ID;
 		void *Server;
 		CNetHandlerSocket *Socket;
 		std::vector<IVarVal *> Headers;
@@ -33,10 +34,10 @@ namespace solusek
 		int ParseErrorStatus;
 
 	public:
-		CNode(unsigned int id, void *server, CNetHandlerSocket *socket);
+		CNode(std::thread::id id, void *server, CNetHandlerSocket *socket);
 		~CNode();
 
-		pthread_t getID() { return ID; }
+		std::thread::id getID() { return ID; }
 
 		void run();
 

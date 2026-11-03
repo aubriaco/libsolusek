@@ -24,7 +24,6 @@ namespace solusek
 		void *CertMem, *KeyMem;
 		std::map<std::string, std::string> AdditionalHeaders;
 		int Timeout;
-		CThreadHandler TH;
 
 	public:
 		CClient();

@@ -9,21 +9,14 @@
 #include "CFlagCollection.h"
 #include "../include/solusek/string_util.h"
 #include "../include/solusek/file_util.h"
+#include <sstream>
 #include <signal.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <openssl/ssl.h>
 #include <openssl/crypto.h>
-#include <sys/prctl.h>
 
 namespace solusek
 {
-	struct SServerPackage
-	{
-		CServer *Server;
-		CNetHandlerSocket *Socket;
-	};
-
 	std::string getFileModTime(const std::string &path)
 	{
 		struct stat attr;
@@ -31,7 +24,13 @@ namespace solusek
 			return std::string();
 		struct tm utcTime;
 		char buffer[64];
-		if (!gmtime_r(&attr.st_mtime, &utcTime) || !strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", &utcTime))
+#ifdef _WIN32
+		const bool utcTimeOK = gmtime_s(&utcTime, &attr.st_mtime) == 0;
+#else
+		const bool utcTimeOK = gmtime_r(&attr.st_mtime, &utcTime) != nullptr;
+#endif
+
+		if (!utcTimeOK || !strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", &utcTime))
 			return std::string();
 		return std::string(buffer);
 	}
@@ -54,15 +53,6 @@ namespace solusek
 	{
 		if (Config)
 			delete Config;
-		/*
-		while(!Nodes.empty())
-		{
-			CNode* node = Nodes.back();
-			Nodes.pop_back();
-			pthread_join(node->getID(),0);
-			delete node;
-		}
-		*/
 		while (!Endpoints.empty())
 		{
 			delete Endpoints.back();
@@ -81,9 +71,6 @@ namespace solusek
 		}
 		if (Database)
 			delete Database;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		OPENSSL_cleanup();
-#endif
 	}
 
 	void CServer::addDefaultMimeTypes()
@@ -171,7 +158,7 @@ namespace solusek
 			while (!StopSignal)
 			{
 				while (!StopSignal && ThreadCount.load(std::memory_order_acquire) >= ThreadLimit)
-					sleep(1);
+					std::this_thread::sleep_for(std::chrono::seconds(1));
 				if (StopSignal)
 					break;
 
@@ -195,35 +182,18 @@ namespace solusek
 
 				Log.print("Client connection attempt.\n");
 
-				SServerPackage *pkg = new SServerPackage();
-				pkg->Server = this;
-				pkg->Socket = socket;
-
-				THREADID threadId = 0;
-				// THREADID threadId = fork();
-
-				const int threadStatus = TH.create(thread_runNode, (void *)pkg, &threadId, false, false);
-				if (threadStatus != 0)
+				try
+				{
+					std::thread([this, socket]
+								{ runNode(std::this_thread::get_id(), socket); })
+						.detach();
+				}
+				catch (const std::system_error &)
 				{
 					Log.print("ERROR: Could not create client thread.\n");
-					delete pkg;
-					socket->close();
 					delete socket;
 					ThreadCount.fetch_sub(1, std::memory_order_acq_rel);
-					continue;
 				}
-
-				/*
-				if(threadId == 0)
-				{
-					pkg->Server->runNode(1, pkg->Socket);
-					Log.print("Exiting node!");
-					return E_ERROR_NONE;
-				}
-				else
-				{
-						}
-				*/
 			}
 
 			MainSocket->close();
@@ -248,20 +218,12 @@ namespace solusek
 		}
 	}
 
-	THREADFUNC CServer::thread_runNode(void *param)
-	{
-		SServerPackage *pkg = static_cast<SServerPackage *>(param);
-		CServer *server = pkg->Server;
-		CNetHandlerSocket *socket = pkg->Socket;
-		delete pkg;
-		server->runNode(pthread_self(), socket);
-		return 0;
-	}
-
-	void CServer::runNode(pthread_t id, CNetHandlerSocket *socket)
+	void CServer::runNode(std::thread::id id, CNetHandlerSocket *socket)
 	{
 		Log.print("Running node...\n");
-		Log.print("Thread ID: " + std::to_string(id) + "\n");
+		std::ostringstream threadId;
+		threadId << "Thread ID: " << id << "\n";
+		Log.print(threadId.str());
 		try
 		{
 			CNode *node = new CNode(id, this, socket);
@@ -469,6 +431,10 @@ namespace solusek
 
 	void CServer::setInterruptCallback(void (*callback)(int))
 	{
+#ifdef _WIN32
+		signal(SIGINT, callback);
+		signal(SIGBREAK, callback);
+#else
 		struct sigaction sigIntHandler;
 
 		sigIntHandler.sa_handler = callback;
@@ -477,6 +443,7 @@ namespace solusek
 
 		sigaction(SIGINT, &sigIntHandler, NULL);
 		sigaction(SIGQUIT, &sigIntHandler, NULL);
+#endif
 	}
 
 	void CServer::stop()

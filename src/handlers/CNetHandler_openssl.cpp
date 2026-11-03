@@ -8,79 +8,73 @@
 #include "CNetHandler.h"
 #include <stdlib.h>
 #include <errno.h>
+#include <cstring>
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#include <mutex>
+#include <memory>
+#endif
 
 using namespace solusek;
 
-static bool bThreadSetup = false;
-static pthread_mutex_t *lock_cs;
-static long *lock_count;
 static int ssl_session_ctx_id = 1;
 static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
 
-void pthreads_locking_callback(int mode, int type, const char *file, int line)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+static std::unique_ptr<std::mutex[]> sslLocks;
+
+static void sslLockingCallback(int mode, int type, const char *, int)
 {
 	if (mode & CRYPTO_LOCK)
-	{
-		pthread_mutex_lock(&(lock_cs[type]));
-		lock_count[type]++;
-	}
+		sslLocks[type].lock();
 	else
-	{
-		pthread_mutex_unlock(&(lock_cs[type]));
-	}
+		sslLocks[type].unlock();
 }
 
-void pthreads_thread_id(CRYPTO_THREADID *tid)
+static void thread_setup()
 {
-	CRYPTO_THREADID_set_numeric(tid, (unsigned long)pthread_self());
+	static std::once_flag initialized;
+	std::call_once(initialized, []
+				   {
+		sslLocks.reset(new std::mutex[CRYPTO_num_locks()]);
+		CRYPTO_set_locking_callback(sslLockingCallback); });
 }
-
-void thread_setup(void)
-{
-	int i;
-
-	lock_cs = (pthread_mutex_t *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
-	lock_count = (long int *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long));
-	for (i = 0; i < CRYPTO_num_locks(); i++)
-	{
-		lock_count[i] = 0;
-		pthread_mutex_init(&(lock_cs[i]), NULL);
-	}
-
-	CRYPTO_THREADID_set_callback(pthreads_thread_id);
-	CRYPTO_set_locking_callback(pthreads_locking_callback);
-	bThreadSetup = true;
-}
+#endif
 
 void CNetHandlerSocket::mutexSSL()
 {
-	CRYPTO_THREADID thread_id;
-
-	CRYPTO_THREADID_current(&thread_id);
 }
 
 bool CNetHandlerSocket::isConnected()
 {
 	char buf;
-	if (SID < 0)
+	if (SID == INVALID_SOCKET)
 		return false;
+#ifdef _WIN32
+	fd_set readable;
+	FD_ZERO(&readable);
+	FD_SET(SID, &readable);
+	timeval immediate = {};
+	const int ready = select(0, &readable, nullptr, nullptr, &immediate);
+	return ready == 0 || (ready > 0 && recv(SID, &buf, 1, MSG_PEEK) > 0);
+#else
 	int err = recv(SID, &buf, 1, MSG_PEEK | MSG_DONTWAIT);
 	return err > 0 || (err < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+#endif
 }
 
 void CNetHandlerSocket::setupSSL(bool re)
 {
 	CNetHandler::initDependencies();
 
-	if (!bThreadSetup)
-		thread_setup();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	thread_setup();
+#endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	CTX = SSL_CTX_new(TLS_method());
 #else
 	CTX = SSL_CTX_new(TLSv1_2_method());
 #endif
-	SSL_CTX_set_session_id_context(CTX, (const unsigned char *)&ssl_session_ctx_id, sizeof(ssl_session_ctx_id));
 	ChildCTX = 0;
 
 	// SSL_CTX_set_options(CTX, SSL_OP_SINGLE_DH_USE);
@@ -89,6 +83,8 @@ void CNetHandlerSocket::setupSSL(bool re)
 		ERR_print_errors_fp(stderr);
 		return;
 	}
+
+	SSL_CTX_set_session_id_context(CTX, (const unsigned char *)&ssl_session_ctx_id, sizeof(ssl_session_ctx_id));
 
 	if (re)
 	{
@@ -176,11 +172,11 @@ void CNetHandlerSocket::setSNIClientHost(const std::string &host)
 	SSL_set_tlsext_host_name(_SSL, host.c_str());
 }
 
-void CNetHandlerSocket::setupSSLSocket(int sid, bool accept, const char *host)
+void CNetHandlerSocket::setupSSLSocket(SocketHandle sid, bool accept, const char *host)
 {
 	int err = 0;
 	_SSL = SSL_new(CTX);
-	err = SSL_set_fd(_SSL, sid);
+	err = SSL_set_fd(_SSL, static_cast<int>(sid));
 
 	if (err == -1)
 		ERR_print_errors_fp(stderr);

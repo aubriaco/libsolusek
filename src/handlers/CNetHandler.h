@@ -7,12 +7,17 @@
 #ifndef __C_NET_HANDLER_INCLUDED__
 #define __C_NET_HANDLER_INCLUDED__
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include "../include/solusek/INetHandlerSocket.h"
-#include "CThreadHandler.h"
 
-#ifdef __linux__
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+using SocketHandle = SOCKET;
+#else
+using SocketHandle = int;
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
@@ -27,8 +32,6 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-static bool CNetHandler_SSLInitialized = false;
-
 struct SNIObj
 {
 	std::string Host;
@@ -40,7 +43,7 @@ struct SNIObj
 class CNetHandlerSocket : public solusek::INetHandlerSocket
 {
 private:
-	int SID;
+	SocketHandle SID;
 	bool Ready, SSLEnabled, SSLMutual, ThrowExceptions;
 	SSL_CTX *CTX;
 	SSL_CTX *ChildCTX;
@@ -50,7 +53,7 @@ private:
 	std::string CertificateFileName, PrivateKeyFileName, CertificatePassword, ClientCAFileName;
 
 	void setupSSL(bool re = false);
-	void setupSSLSocket(int sid, bool accept = false, const char *host = 0);
+	void setupSSLSocket(SocketHandle sid, bool accept = false, const char *host = 0);
 	void cleanupSSL();
 	std::string getSSLClientCertificatePublicKey();
 
@@ -72,13 +75,11 @@ public:
 	int CustomStatus;
 	unsigned long UniqueID;
 	void *ProgramPackage;
-	THREADHANDLE ThreadHandle;
-	THREADHANDLE SupportThreadHandle;
 
 	void setCTX(void *ctx);
 	void setChildCTX(void *ctx);
 
-	CNetHandlerSocket(int sid = 0, bool ssl = false, bool sslMutual = false, SSL_CTX *ctx = 0, SSL *_ssl = 0, const std::string &ipaddr = std::string());
+	CNetHandlerSocket(SocketHandle sid = INVALID_SOCKET, bool ssl = false, bool sslMutual = false, SSL_CTX *ctx = 0, SSL *_ssl = 0, const std::string &ipaddr = std::string());
 	~CNetHandlerSocket();
 
 	bool isReady() { return Ready; }
@@ -136,31 +137,23 @@ public:
 
 class CNetHandler
 {
-private:
-#ifdef _WIN32
-	WSADATA WD;
-#endif
-
 public:
-#ifdef _WIN32
-	CNetHandler() { WSAStartup(MAKEWORD(2, 0), &WD); };
-	~CNetHandler() { WSACleanup(); };
-#elif __linux__
-	CNetHandler() {};
-	~CNetHandler() {};
-#endif
-
 	CNetHandlerSocket *createSocket(bool ssl = false);
 
 	static inline void initDependencies()
 	{
-		if (!CNetHandler_SSLInitialized)
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		OPENSSL_init_ssl(0, nullptr);
+#else
+		static const bool initialized = []
 		{
 			SSL_library_init();
 			SSL_load_error_strings();
 			OpenSSL_add_all_algorithms();
-			CNetHandler_SSLInitialized = true;
-		}
+			return true;
+		}();
+		(void)initialized;
+#endif
 	}
 };
 

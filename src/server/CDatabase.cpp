@@ -7,8 +7,6 @@
 #include "CDatabase.h"
 #include "CTransaction.h"
 #include "CDatabaseInstance.h"
-#include <unistd.h>
-#include <pthread.h>
 #include <stdexcept>
 
 namespace solusek
@@ -17,26 +15,14 @@ namespace solusek
 	{
 		ExpireSeconds = SOLUSEK_DBPOOL_EXPIRESECONDS;
 		Running = true;
-		TID = 0;
-		pthread_attr_t attr;
-		pthread_attr_init(&attr);
-		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-		pthread_create(&TID, &attr, poolThread, this);
-		pthread_attr_destroy(&attr);
+		PoolThread = std::thread(&CDatabase::_poolThread, this);
 	}
 
 	CDatabase::~CDatabase()
 	{
 		Running.store(false, std::memory_order_release);
-		pthread_join(TID, 0);
+		PoolThread.join();
 		closeAll();
-	}
-
-	void *CDatabase::poolThread(void *param)
-	{
-		CDatabase *db = (CDatabase *)param;
-		db->_poolThread();
-		return 0;
 	}
 
 	void CDatabase::_poolThread()
@@ -52,7 +38,7 @@ namespace solusek
 					CDatabaseInstance *instance = static_cast<CDatabaseInstance *>(*it);
 					if (!instance->inUse() && now - instance->getT() > ExpireSeconds)
 					{
-						fprintf(stdout, "DB Pool: Expired: %lu\n", instance->getID());
+						fprintf(stdout, "DB Pool: Expired: %zu\n", instance->getID());
 						delete instance;
 						it = Instances.erase(it);
 					}
@@ -60,7 +46,7 @@ namespace solusek
 						++it;
 				}
 			}
-			sleep(1);
+			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 	}
 
