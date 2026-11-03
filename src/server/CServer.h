@@ -7,7 +7,6 @@
 #ifndef __C_SERVER_INCLUDED__
 #define __C_SERVER_INCLUDED__
 #include "../handlers/CNetHandler.h"
-#include "../handlers/CThreadHandler.h"
 #include "../include/solusek/IServer.h"
 #include "../include/solusek/MStaticEndpoint.h"
 #include "../include/solusek/MMimeType.h"
@@ -20,7 +19,7 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
-#include <pthread.h>
+#include <thread>
 #include <condition_variable>
 
 #define SOLUSEK_DEFAULT_THREAD_LIMIT 25
@@ -34,7 +33,6 @@ namespace solusek
 
 	protected:
 		CNetHandler NH;
-		CThreadHandler TH;
 		CNetHandlerSocket *MainSocket;
 		CConfig *Config;
 		CDatabase *Database;
@@ -93,9 +91,8 @@ namespace solusek
 
 		void removeNode(CNode *node);
 
-		static THREADFUNC thread_runNode(void *param);
 
-		void runNode(pthread_t id, CNetHandlerSocket *socket);
+		void runNode(std::thread::id id, CNetHandlerSocket *socket);
 
 		virtual void setListenPort(int port) { ListenPort = port; }
 

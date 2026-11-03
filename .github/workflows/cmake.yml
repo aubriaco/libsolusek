@@ -26,3 +26,29 @@ jobs:
 
       - name: Build
         run: cmake --build build --parallel 2
+
+  windows:
+    name: Windows x64 build and HTTP smoke test
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenSSL
+        run: vcpkg install openssl:x64-windows
+
+      - name: Configure and build
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build --config Release --parallel 2
+
+      - name: Smoke test
+        run: |
+          $server = Start-Process -FilePath "$PWD/build/Release/sample-server-test.exe" -ArgumentList 18080 -WorkingDirectory "$PWD/build" -PassThru
+          try {
+            $body = curl.exe --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 --max-time 5 http://127.0.0.1:18080/api/cookie/set
+            if ($LASTEXITCODE -ne 0 -or $body -ne 'Cookie set!') {
+              throw "Unexpected HTTP response: $body"
+            }
+          } finally {
+            if (-not $server.HasExited) { Stop-Process -Id $server.Id }
+          }

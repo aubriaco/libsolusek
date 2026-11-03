@@ -9,7 +9,6 @@
 #include "../include/solusek/MErrorResponse.h"
 #include <algorithm>
 #include <ctime>
-#include <unistd.h>
 #include <limits>
 #include <cstdint>
 #include <stdexcept>
@@ -20,7 +19,7 @@
 
 namespace solusek
 {
-	CNode::CNode(unsigned int id, void *server, CNetHandlerSocket *socket)
+	CNode::CNode(std::thread::id id, void *server, CNetHandlerSocket *socket)
 	{
 		ID = id;
 		Server = server;
@@ -186,7 +185,12 @@ namespace solusek
 			time_t now = time(0);
 			struct tm utcTime;
 			char dateBuffer[64];
-			if (gmtime_r(&now, &utcTime) && strftime(dateBuffer, sizeof(dateBuffer), "%a, %d %b %Y %H:%M:%S GMT", &utcTime))
+#ifdef _WIN32
+			const bool utcTimeOK = gmtime_s(&utcTime, &now) == 0;
+#else
+			const bool utcTimeOK = gmtime_r(&now, &utcTime) != nullptr;
+#endif
+			if (utcTimeOK && strftime(dateBuffer, sizeof(dateBuffer), "%a, %d %b %Y %H:%M:%S GMT", &utcTime))
 				sdt = dateBuffer;
 			else
 				sdt = "Thu, 01 Jan 1970 00:00:00 GMT";

@@ -6,7 +6,7 @@
 */
 #ifndef __C_DATABASE_INCLUDED__
 #define __C_DATABASE_INCLUDED__
-#include <pthread.h>
+#include <thread>
 #include <mutex>
 #include <atomic>
 #include "../handlers/CDatabaseHandler.h"
@@ -24,14 +24,13 @@ namespace solusek
 		std::vector<IDatabaseInstance *> Instances;
 		std::atomic<bool> Running;
 		std::mutex InstancesMutex;
-		pthread_t TID;
+		std::thread PoolThread;
 		int ExpireSeconds;
 
 	public:
 		CDatabase();
 		~CDatabase();
 
-		static void *poolThread(void *param);
 		void _poolThread();
 
 		IDatabaseInstance *getUnusedInstance(const std::string &cs);

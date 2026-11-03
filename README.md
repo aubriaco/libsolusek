@@ -62,6 +62,33 @@ cmake --build build --parallel
 
 The project builds a shared library and the bundled `sample-server-test` example.
 
+### Windows x64 (MSVC)
+
+Install Visual Studio 2022 or its Build Tools with **Desktop development with C++**,
+CMake, and vcpkg. Set `VCPKG_ROOT` to your bootstrapped vcpkg directory.
+Run these commands in PowerShell from the repository root:
+
+```powershell
+& "$env:VCPKG_ROOT/vcpkg.exe" install openssl:x64-windows
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
+cmake --build build --config Release --parallel
+Push-Location build
+.\Release\sample-server-test.exe 8080
+Pop-Location
+```
+
+From another terminal, run `curl.exe http://127.0.0.1:8080/api/cookie/set`.
+The response body should be `Cookie set!`. Launching the sample with
+`build` as the working directory also enables its relative static-file paths.
+
+The Windows build uses Winsock. Keep `solusek.dll` and the matching OpenSSL
+runtime DLLs beside your application or on its DLL search path. Use a fresh build
+directory when changing the CMake generator, architecture, or vcpkg toolchain.
+
+The default Windows build requires only OpenSSL. For PostgreSQL or Redis, install
+`libpqxx:x64-windows` or `hiredis:x64-windows` and enable the corresponding
+CMake option below. MySQL/MariaDB uses the existing pkg-config discovery path.
+
 ### Optional backends
 
 The following CMake variables enable additional integrations:
