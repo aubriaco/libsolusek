@@ -12,6 +12,10 @@
 #include <cerrno>
 #endif
 #include <memory>
+#include <algorithm>
+#include <climits>
+#include <system_error>
+#include <openssl/err.h>
 
 using namespace solusek;
 
@@ -314,32 +318,187 @@ bool CNetHandlerSocket::close()
 	return true;
 }
 
+namespace
+{
+	// Wait until a nonblocking TLS operation can be retried without spinning.
+	void waitForTLS(SocketHandle sid, int sslError)
+	{
+		fd_set readSet, writeSet;
+		FD_ZERO(&readSet);
+		FD_ZERO(&writeSet);
+
+		if (sslError == SSL_ERROR_WANT_READ)
+			FD_SET(sid, &readSet);
+		else
+			FD_SET(sid, &writeSet);
+
+		int result;
+		do
+		{
+			// select modifies its sets, so reconstruct them after interruption.
+			FD_ZERO(&readSet);
+			FD_ZERO(&writeSet);
+			if (sslError == SSL_ERROR_WANT_READ)
+				FD_SET(sid, &readSet);
+			else
+				FD_SET(sid, &writeSet);
+#ifdef _WIN32
+			result = ::select(0, &readSet, &writeSet, nullptr, nullptr);
+#else
+			result = ::select(sid + 1, &readSet, &writeSet, nullptr, nullptr);
+#endif
+		}
+#ifndef _WIN32
+		while (result < 0 && errno == EINTR);
+#else
+		while (false);
+#endif
+
+		if (result <= 0)
+			throw std::runtime_error("TLS socket readiness wait failed.");
+	}
+
+	[[noreturn]] void throwTLSError(const char *operation, int sslError, int savedErrno)
+	{
+		if (sslError == SSL_ERROR_ZERO_RETURN)
+			throw std::runtime_error(std::string(operation) + ": TLS connection closed by peer.");
+
+		if (sslError == SSL_ERROR_SYSCALL && savedErrno != 0)
+			throw std::system_error(savedErrno, std::generic_category(), operation);
+
+		const unsigned long code = ERR_get_error();
+		if (code)
+		{
+			char message[256];
+			ERR_error_string_n(code, message, sizeof(message));
+			throw std::runtime_error(std::string(operation) + ": " + message);
+		}
+		throw std::runtime_error(std::string(operation) + ": TLS operation failed (SSL error " +
+								 std::to_string(sslError) + ").");
+	}
+}
+
 void CNetHandlerSocket::readExact(void *data, size_t size)
 {
 	auto ptr = static_cast<unsigned char *>(data);
-	while (size)
+
+	while (size > 0)
 	{
-		ssize_t n = recv(SID, ptr, size, 0);
-		if (n < 0 && errno == EINTR)
-			continue;
-		if (n <= 0)
-			throw std::runtime_error("Connection closed or receive failed.");
+		if (SSLEnabled)
+		{
+			if (!_SSL)
+				throw std::runtime_error("TLS connection is not initialized.");
+
+			// OpenSSL's _ex API accepts size_t and reports actual bytes transferred.
+			size_t received = 0;
+			ERR_clear_error();
+			errno = 0;
+			const int result = SSL_read_ex(_SSL, ptr, size, &received);
+			const int savedErrno = errno;
+
+			if (result == 1)
+			{
+				if (received == 0)
+					throw std::runtime_error("TLS read made no progress.");
+				ptr += received;
+				size -= received;
+				continue;
+			}
+
+			const int error = SSL_get_error(_SSL, result);
+			if (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE)
+			{
+				waitForTLS(SID, error);
+				continue;
+			}
+			throwTLSError("SSL_read_ex", error, savedErrno);
+		}
+
+#ifdef _WIN32
+		const int n = ::recv(SID, reinterpret_cast<char *>(ptr),
+							 static_cast<int>(std::min(size, static_cast<size_t>(INT_MAX))), 0);
+		if (n == SOCKET_ERROR)
+		{
+			const int error = WSAGetLastError();
+			if (error == WSAEINTR)
+				continue;
+			throw std::runtime_error("recv failed (Winsock error " + std::to_string(error) + ").");
+		}
+#else
+		const size_t n = ::recv(SID, ptr, size, 0);
+		if (n < 0)
+		{
+			if (errno == EINTR)
+				continue;
+			throw std::system_error(errno, std::generic_category(), "recv");
+		}
+#endif
+		if (n == 0)
+			throw std::runtime_error("Connection closed by peer.");
 		ptr += n;
-		size -= n;
+		size -= static_cast<size_t>(n);
 	}
 }
+
 void CNetHandlerSocket::writeExact(const void *data, size_t size)
 {
 	auto ptr = static_cast<const unsigned char *>(data);
-	while (size)
+
+	while (size > 0)
 	{
-		ssize_t n = send(SID, ptr, size, MSG_NOSIGNAL);
-		if (n < 0 && errno == EINTR)
-			continue;
-		if (n <= 0)
-			throw std::runtime_error("Connection closed or send failed.");
+		if (SSLEnabled)
+		{
+			if (!_SSL)
+				throw std::runtime_error("TLS connection is not initialized.");
+
+			size_t written = 0;
+			ERR_clear_error();
+			errno = 0;
+			const int result = SSL_write_ex(_SSL, ptr, size, &written);
+			const int savedErrno = errno;
+
+			if (result == 1)
+			{
+				if (written == 0)
+					throw std::runtime_error("TLS write made no progress.");
+				ptr += written;
+				size -= written;
+				continue;
+			}
+
+			const int error = SSL_get_error(_SSL, result);
+			if (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE)
+			{
+				// Keep the same pointer and length until the write completes.
+				waitForTLS(SID, error);
+				continue;
+			}
+			throwTLSError("SSL_write_ex", error, savedErrno);
+		}
+
+#ifdef _WIN32
+		const int n = ::send(SID, reinterpret_cast<const char *>(ptr),
+							 static_cast<int>(std::min(size, static_cast<size_t>(INT_MAX))), 0);
+		if (n == SOCKET_ERROR)
+		{
+			const int error = WSAGetLastError();
+			if (error == WSAEINTR)
+				continue;
+			throw std::runtime_error("send failed (Winsock error " + std::to_string(error) + ").");
+		}
+#else
+		const size_t n = ::send(SID, ptr, size, MSG_NOSIGNAL);
+		if (n < 0)
+		{
+			if (errno == EINTR)
+				continue;
+			throw std::system_error(errno, std::generic_category(), "send");
+		}
+#endif
+		if (n == 0)
+			throw std::runtime_error("Socket send returned zero.");
 		ptr += n;
-		size -= n;
+		size -= static_cast<size_t>(n);
 	}
 }
 
