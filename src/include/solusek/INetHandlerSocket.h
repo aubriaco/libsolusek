@@ -2,6 +2,14 @@
 #define __I_NET_HANDLER_SOCKET_INCLUDED__
 #include <string>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+using SocketHandle = SOCKET;
+#else
+using SocketHandle = int;
+#endif
+
 namespace solusek
 {
 
@@ -75,6 +83,8 @@ namespace solusek
 		virtual int getTimeout() = 0;
 
 		virtual bool isConnected() = 0;
+
+		virtual int getSocket() = 0;
 
 		virtual void dispose() = 0;
 	};

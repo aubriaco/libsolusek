@@ -15,9 +15,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
-using SocketHandle = SOCKET;
 #else
-using SocketHandle = int;
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
@@ -131,6 +129,8 @@ public:
 	int getTimeout() { return Timeout; }
 
 	bool isConnected();
+
+	SocketHandle getSocket() { return SID; }
 
 	void dispose() { delete this; }
 };
