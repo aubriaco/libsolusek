@@ -22,9 +22,9 @@ namespace solusek
         return new CClient();
     }
 
-    INetHandlerSocket *createNetHandlerSocket()
+    INetHandlerSocket *createNetHandlerSocket(bool ssl, bool sslMutual)
     {
-        return new CNetHandlerSocket();
+        return new CNetHandlerSocket(-1, ssl, sslMutual);
     }
 
     ICache *createCache()

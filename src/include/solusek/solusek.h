@@ -21,7 +21,7 @@ namespace solusek
 {
 	IServer *createServer();
 	IClient *createClient();
-	INetHandlerSocket *createNetHandlerSocket();
+	INetHandlerSocket *createNetHandlerSocket(bool ssl = false, bool sslMutual = false);
 	ICache *createCache();
 }
 
