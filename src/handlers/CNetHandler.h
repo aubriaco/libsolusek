@@ -15,6 +15,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+using SocketHandle = SOCKET;
 #else
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +23,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+using SocketHandle = int;
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
 #endif
@@ -131,6 +133,18 @@ public:
 	bool isConnected();
 
 	SocketHandle getSocket() { return SID; }
+
+	unsigned int mChunkSize = 2048; // chunk data size
+	void readExact(void *data, size_t size);
+	void writeExact(const void *data, size_t size);
+	unsigned int recvUInt();
+	void sendUInt(unsigned int num);
+	int recvInt();
+	void sendInt(int num);
+	unsigned long recvUInt64();
+	void sendUInt64(unsigned long num);
+	unsigned char *recvDataAlloc(size_t size);
+	void sendData(unsigned char *data, size_t size);
 
 	void dispose() { delete this; }
 };

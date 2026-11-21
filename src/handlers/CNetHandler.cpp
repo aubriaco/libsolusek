@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <cerrno>
 #endif
+#include <memory>
 
 using namespace solusek;
 
@@ -311,4 +312,89 @@ bool CNetHandlerSocket::close()
 		SID = INVALID_SOCKET;
 	}
 	return true;
+}
+
+void CNetHandlerSocket::readExact(void *data, size_t size)
+{
+	auto ptr = static_cast<unsigned char *>(data);
+	while (size)
+	{
+		ssize_t n = recv(SID, ptr, size, 0);
+		if (n < 0 && errno == EINTR)
+			continue;
+		if (n <= 0)
+			throw std::runtime_error("Connection closed or receive failed.");
+		ptr += n;
+		size -= n;
+	}
+}
+void CNetHandlerSocket::writeExact(const void *data, size_t size)
+{
+	auto ptr = static_cast<const unsigned char *>(data);
+	while (size)
+	{
+		ssize_t n = send(SID, ptr, size, MSG_NOSIGNAL);
+		if (n < 0 && errno == EINTR)
+			continue;
+		if (n <= 0)
+			throw std::runtime_error("Connection closed or send failed.");
+		ptr += n;
+		size -= n;
+	}
+}
+
+unsigned int CNetHandlerSocket::recvUInt()
+{
+	unsigned int netNum = 0;
+	readExact(&netNum, sizeof(unsigned int));
+	return ntohl(netNum);
+}
+
+void CNetHandlerSocket::sendUInt(unsigned int num)
+{
+	unsigned int netNum = htonl(num);
+	writeExact(&netNum, sizeof(unsigned int));
+}
+
+int CNetHandlerSocket::recvInt()
+{
+	unsigned int netNum = 0;
+	readExact(&netNum, sizeof(unsigned int));
+	return ntohl(netNum);
+}
+
+void CNetHandlerSocket::sendInt(int num)
+{
+	unsigned int netNum = htonl((unsigned int)num);
+	writeExact(&netNum, sizeof(unsigned int));
+}
+
+unsigned long CNetHandlerSocket::recvUInt64()
+{
+	unsigned int netHigh = 0;
+	unsigned int netLow = 0;
+	readExact(&netHigh, sizeof(unsigned int));
+	readExact(&netLow, sizeof(unsigned int));
+
+	return (((unsigned long)ntohl(netHigh) & 0xFFFFFFFFLL) << 32) | ((unsigned long)ntohl(netLow));
+}
+
+void CNetHandlerSocket::sendUInt64(unsigned long num)
+{
+	unsigned int netHigh = htonl((unsigned int)(num >> 32));
+	unsigned int netLow = htonl((unsigned int)(num & 0xFFFFFFFFLL));
+	writeExact(&netHigh, sizeof(unsigned int));
+	writeExact(&netLow, sizeof(unsigned int));
+}
+
+unsigned char *CNetHandlerSocket::recvDataAlloc(size_t size)
+{
+	std::unique_ptr<unsigned char[]> data(new unsigned char[size]);
+	readExact(data.get(), size);
+	return data.release();
+}
+
+void CNetHandlerSocket::sendData(unsigned char *data, size_t size)
+{
+	writeExact(data, size);
 }
