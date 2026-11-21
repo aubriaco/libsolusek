@@ -86,14 +86,15 @@ void CNetHandlerSocket::setupSSL(bool re)
 
 	SSL_CTX_set_session_id_context(CTX, (const unsigned char *)&ssl_session_ctx_id, sizeof(ssl_session_ctx_id));
 
+	setSSLMutual(SSLMutual);
 	if (re)
 	{
-		setSSLMutual(SSLMutual);
 		setSSLCertificatePassword(CertificatePassword.c_str());
 		setSSLCertificate(CertificateFileName.c_str());
 		setSSLPrivateKeyFile(PrivateKeyFileName.c_str());
 		// setSNIEnabled(SNIEnabled);
-		// setSSLClientCAFile(ClientCAFileName.c_str());
+		if (!ClientCAFileName.empty())
+			setSSLClientCAFile(ClientCAFileName.c_str());
 	}
 }
 
@@ -123,18 +124,22 @@ int CNetHandlerSocket::_sni_callback(SSL *ssl, int *i, void *param)
 				SSL_CTX_add_extra_chain_cert(ctx, (X509 *)(*ait));
 			}
 			SSL_CTX_use_PrivateKey(ctx, (EVP_PKEY *)(*it).Key);
+#ifdef SSL_CTRL_SET_VERIFY_CERT_STORE
+			SSL_CTX *listenerContext = SSL_get_SSL_CTX(ssl);
+			if (SSL_set1_verify_cert_store(ssl, SSL_CTX_get_cert_store(listenerContext)) != 1)
+			{
+				SSL_CTX_free(ctx);
+				return SSL_TLSEXT_ERR_ALERT_FATAL;
+			}
+#endif
 			SSL_set_SSL_CTX(ssl, ctx);
 			socket->setChildCTX(ctx);
 			socket->setSNIHostName(name);
-			if ((*it).Mutual)
+			if ((*it).Mutual || (SSL_get_verify_mode(ssl) & SSL_VERIFY_FAIL_IF_NO_PEER_CERT))
 			{
-				SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, verify_callback);
-				SSL_CTX_set_verify_depth(ctx, 1);
-			}
-			else
-			{
-				SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-				SSL_CTX_set_verify_depth(ctx, 0);
+				SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT |
+					SSL_VERIFY_CLIENT_ONCE, verify_callback);
+				SSL_set_verify_depth(ssl, 1);
 			}
 			return SSL_TLSEXT_ERR_OK;
 		}
@@ -172,26 +177,41 @@ void CNetHandlerSocket::setSNIClientHost(const std::string &host)
 	SSL_set_tlsext_host_name(_SSL, host.c_str());
 }
 
-void CNetHandlerSocket::setupSSLSocket(SocketHandle sid, bool accept, const char *host)
+bool CNetHandlerSocket::setupSSLSocket(SocketHandle sid, bool accept, const char *host)
 {
-	int err = 0;
+	if (!CTX)
+		return false;
+
 	_SSL = SSL_new(CTX);
-	err = SSL_set_fd(_SSL, static_cast<int>(sid));
-
-	if (err == -1)
-		ERR_print_errors_fp(stderr);
-
-	if (accept)
-		err = SSL_accept(_SSL);
-	else
+	if (!_SSL)
 	{
-		SSL_set_connect_state(_SSL);
-		if (host)
-			setSNIClientHost(host);
-		err = SSL_connect(_SSL);
-	}
-	if (err == -1)
 		ERR_print_errors_fp(stderr);
+		return false;
+	}
+
+	if (SSL_set_fd(_SSL, static_cast<int>(sid)) == 1)
+	{
+		if (!accept)
+		{
+			SSL_set_connect_state(_SSL);
+			if (host)
+				setSNIClientHost(host);
+		}
+
+		ERR_clear_error();
+		const int result = accept ? SSL_accept(_SSL) : SSL_connect(_SSL);
+		if (result == 1)
+			return true;
+
+		const int error = SSL_get_error(_SSL, result);
+		fprintf(stderr, "%s failed (SSL_get_error: %d)\n",
+			accept ? "SSL_accept" : "SSL_connect", error);
+	}
+
+	ERR_print_errors_fp(stderr);
+	SSL_free(_SSL);
+	_SSL = nullptr;
+	return false;
 }
 
 bool CNetHandlerSocket::setSSLCertificate(const char *filename)
@@ -291,9 +311,11 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 void CNetHandlerSocket::setSSLMutual(bool enabled)
 {
 	SSLMutual = enabled;
+	if (!CTX)
+		return;
 	if (enabled)
 	{
-		SSL_CTX_set_verify(CTX, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, verify_callback);
+		SSL_CTX_set_verify(CTX, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE, verify_callback);
 		SSL_CTX_set_verify_depth(CTX, 1);
 	}
 	else

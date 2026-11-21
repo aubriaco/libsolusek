@@ -196,7 +196,8 @@ CNetHandlerSocket *CNetHandlerSocket::accept()
 	char ipaddr[INET6_ADDRSTRLEN] = {};
 	inet_ntop(clientAddress.sa_family, get_in_addr((struct sockaddr *)&clientAddress), ipaddr, sizeof(ipaddr));
 
-	if (!isWhitelisted(ipaddr) && isBlacklisted(ipaddr))
+	if ((!isWhitelisted(ipaddr) && isBlacklisted(ipaddr)) ||
+		(SSLEnabled && !setupSSLSocket(sid, true)))
 	{
 #ifdef _WIN32
 		::closesocket(sid);
@@ -205,9 +206,6 @@ CNetHandlerSocket *CNetHandlerSocket::accept()
 #endif
 		return 0;
 	}
-
-	if (SSLEnabled)
-		setupSSLSocket(sid, true);
 
 	CNetHandlerSocket *sock = new CNetHandlerSocket(sid, SSLEnabled, SSLMutual, ChildCTX ? ChildCTX : CTX, _SSL, ipaddr);
 	_SSL = 0;
@@ -252,10 +250,16 @@ bool CNetHandlerSocket::connect(const char *host, int port)
 
 	int r = ::connect(SID, (struct sockaddr *)&addr, sizeof(addr));
 
-	if (r == 0 && SSLEnabled)
-		setupSSLSocket(SID, false, host);
+	if (r != 0)
+		return false;
 
-	return (r == 0);
+	if (SSLEnabled && !setupSSLSocket(SID, false, host))
+	{
+		close();
+		return false;
+	}
+
+	return true;
 }
 
 bool CNetHandlerSocket::writeBuffer(const void *buf, int len)

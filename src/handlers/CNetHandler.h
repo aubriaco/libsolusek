@@ -53,7 +53,7 @@ private:
 	std::string CertificateFileName, PrivateKeyFileName, CertificatePassword, ClientCAFileName;
 
 	void setupSSL(bool re = false);
-	void setupSSLSocket(SocketHandle sid, bool accept = false, const char *host = 0);
+	bool setupSSLSocket(SocketHandle sid, bool accept = false, const char *host = 0);
 	void cleanupSSL();
 	std::string getSSLClientCertificatePublicKey();
 
